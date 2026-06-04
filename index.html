@@ -670,12 +670,7 @@ function updateMetricsC() {
     '<div class="stat-card green"><div class="num">' + done + '</div><div class="lbl">Comptés</div></div>' +
     '<div class="stat-card amber"><div class="num">' + (tot - done) + '</div><div class="lbl">Restants</div></div>' +
     '<div class="stat-card gold"><div class="num">' + pct + '%</div><div class="lbl">Avancement</div></div>';
-  // Show terminer button only when all articles are counted
-  const btnTerminer = document.getElementById('btn-terminer');
-  if (btnTerminer) {
-    if (pct === 100) btnTerminer.classList.remove('hidden');
-    else btnTerminer.classList.add('hidden');
-  }
+
 }
 
 function renderTable() {
