@@ -13,8 +13,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:var(--cream);min-height:100vh}
 .hidden{display:none!important}
-
-/* TOPBAR */
 .topbar{background:var(--dark);padding:0 2rem;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--gold-border)}
 .topbar-logo .name{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
 .topbar-logo .sub{font-size:11px;color:rgba(255,255,255,.4)}
@@ -22,28 +20,18 @@ body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);backgroun
 .sync-dot{width:7px;height:7px;border-radius:50%;background:#555;flex-shrink:0}
 .sync-dot.ok{background:#22c55e}.sync-dot.loading{background:var(--gold);animation:pulse 1s infinite}.sync-dot.error{background:#ef4444}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
-
-/* NAV */
 .nav-wrap{background:var(--dark);border-bottom:1.5px solid var(--gold-border);padding:0 2rem}
 .nav{display:flex;max-width:1100px;margin:0 auto;overflow-x:auto}
 .nav-btn{padding:14px 18px;background:transparent;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:rgba(255,255,255,.65);transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap;margin-bottom:-1.5px}
 .nav-btn:hover{color:#fff}.nav-btn.active{color:#fff;border-bottom-color:var(--gold)}
-
 .app{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 3rem}
-
-/* CARDS */
 .card{background:var(--white);border:1.5px solid var(--gray-light);border-radius:16px;padding:1.25rem;margin-bottom:1rem}
 .section-title{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
 .section-title::before{content:'';display:block;width:3px;height:16px;background:var(--gold);border-radius:2px}
-
-/* BUTTONS */
 .btn-primary{padding:10px 22px;background:var(--gold);color:var(--dark);border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:7px;transition:all .15s}
 .btn-primary:hover{background:#d4a93a}
 .btn-secondary{padding:10px 18px;background:transparent;color:var(--dark);border:1.5px solid var(--gray-light);border-radius:10px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:6px}
 .btn-secondary:hover{background:var(--cream)}
-.btn-dark{padding:10px 18px;background:var(--dark);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:6px}
-
-/* STATS */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
 @media(max-width:700px){.stat-grid{grid-template-columns:1fr 1fr}}
 .stat-card{background:var(--white);border:1.5px solid var(--gray-light);border-radius:14px;padding:1rem;text-align:center}
@@ -52,22 +40,16 @@ body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);backgroun
 .stat-card.green{border-color:#bbf7d0;background:#f0fdf4}.stat-card.green .num{color:#15803d}
 .stat-card.red{border-color:#fecaca;background:#fff5f5}.stat-card.red .num{color:#dc2626}
 .stat-card.amber{border-color:#fde68a;background:#fffbeb}.stat-card.amber .num{color:#b45309}
-
-/* PROGRESS */
 .progress-wrap{margin-bottom:1.5rem}
 .progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:500}
 .progress-bar-bg{height:8px;background:var(--gray-light);border-radius:4px;overflow:hidden}
 .progress-bar{height:100%;background:var(--gold);border-radius:4px;transition:width .3s}
-
-/* FILTER BAR */
 .filter-bar{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
 .filter-btn{padding:7px 14px;border:1.5px solid var(--gray-light);border-radius:20px;background:transparent;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s;white-space:nowrap}
 .filter-btn:hover{border-color:rgba(200,168,75,.4);color:var(--gold)}
 .filter-btn.active{background:var(--dark);color:#fff;border-color:var(--dark)}
 .search-input{padding:8px 14px;border:1.5px solid var(--gray-light);border-radius:20px;background:var(--white);color:var(--dark);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;flex:1;min-width:200px}
 .search-input:focus{border-color:rgba(200,168,75,.5)}
-
-/* TABLE */
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead tr{border-bottom:2px solid var(--gray-light)}
@@ -79,17 +61,11 @@ tr:hover td{background:#faf9f6}
 .qty-in{width:75px;padding:7px 9px;border:1.5px solid var(--gray-light);border-radius:8px;text-align:center;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);outline:none;transition:border-color .15s}
 .qty-in:focus{border-color:rgba(200,168,75,.6)}
 .fam-row td{background:var(--cream);font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px}
-
-/* BADGES */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
 .badge-surplus{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
 .badge-manque{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
 .badge-nc{background:var(--cream);color:var(--gray);border:1px solid var(--gray-light)}
-.badge-gms{background:rgba(200,168,75,.15);color:#92710a;border:1px solid var(--gold-border)}
-.badge-prestige{background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff}
-
-/* HOME PAGE */
 .home-hero{text-align:center;padding:3rem 1rem 2rem}
 .home-hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
 .home-hero p{font-size:14px;color:var(--gray)}
@@ -112,35 +88,13 @@ tr:hover td{background:#faf9f6}
 .team-card.prestige h2{color:#7c3aed}
 .team-card p{font-size:13px;color:var(--gray)}
 .team-card .count{font-size:22px;font-weight:700;color:var(--dark);margin:6px 0 2px}
-
-/* CONFIG PAGE */
 .toggle-wrap{display:flex;gap:4px}
 .toggle-btn{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gray-light);background:transparent;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s}
-.toggle-btn:hover{border-color:rgba(200,168,75,.4)}
 .toggle-btn.gms-on{background:var(--gold);color:var(--dark);border-color:var(--gold)}
 .toggle-btn.prestige-on{background:#7c3aed;color:#fff;border-color:#7c3aed}
 .saving{font-size:12px;color:var(--gray);font-style:italic}
-
-/* ECART COLORS */
 .ep{color:#15803d;font-weight:700}.en{color:#dc2626;font-weight:700}.ez{color:var(--gray)}
-
-/* UNKNOWN BANNER */
-.unknown-banner{background:#fffbf0;border:1.5px solid rgba(200,168,75,.5);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
-.unknown-banner h3{font-size:13px;font-weight:700;color:#92710a;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.unknown-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(200,168,75,.2);flex-wrap:wrap}
-.unknown-item:last-child{border-bottom:none}
-.unknown-item .aname{flex:1;font-size:13px;font-weight:500;min-width:160px}
-.unknown-item .acode{font-size:11px;color:var(--gray);font-family:monospace}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:var(--gold);padding:13px 22px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid var(--gold-border)}
-.toast.show{opacity:1}
-
-.empty-state{text-align:center;padding:3rem 1rem;color:#bbb}
-.empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
-
-
-
+/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:1rem}
 .modal-bg.open{display:flex}
 .modal-box{background:var(--white);border-radius:20px;padding:2rem;max-width:620px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
@@ -154,6 +108,10 @@ tr:hover td{background:#faf9f6}
 .undef-btn{padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gray-light);background:transparent;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s}
 .undef-btn.sel-gms{background:var(--gold);color:var(--dark);border-color:var(--gold)}
 .undef-btn.sel-prestige{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:var(--gold);padding:13px 22px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid var(--gold-border)}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:3rem 1rem;color:#bbb}
+.empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
 </style>
 </head>
 <body>
@@ -180,24 +138,22 @@ tr:hover td{background:#faf9f6}
 
 <div class="app">
 
-  <!-- PAGE HOME -->
+  <!-- HOME -->
   <div id="page-home">
     <div class="home-hero">
       <h1>Inventaire Stock</h1>
       <p>Uploadez le fichier Excel puis choisissez votre équipe</p>
     </div>
-
     <div class="card">
       <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Fichier stock</div>
       <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
         <i class="ti ti-cloud-upload"></i>
-        <p>Cliquez ou déposez votre fichier Excel ici</p>
+        <p>Cliquez ou déposez le fichier Excel ici</p>
         <small>.xlsx — fichier stock global</small>
       </div>
       <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
       <div class="upload-ok" id="upload-ok"></div>
     </div>
-
     <div class="card">
       <div class="section-title"><i class="ti ti-users"></i> Choisissez votre équipe</div>
       <div class="team-grid">
@@ -217,32 +173,25 @@ tr:hover td{background:#faf9f6}
     </div>
   </div>
 
-  <!-- PAGE COMPTAGE -->
+  <!-- COMPTAGE -->
   <div id="page-comptage" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
-      <div class="section-title" style="margin:0" id="comptage-title">Comptage GMS</div>
+      <div class="section-title" style="margin:0" id="comptage-title">Comptage</div>
       <button class="btn-primary" onclick="showPage('ecarts')"><i class="ti ti-chart-bar"></i> Voir les écarts</button>
     </div>
-
     <div class="stat-grid" id="metrics-c"></div>
-
     <div class="card" style="padding:.75rem 1.25rem">
       <div class="progress-wrap" style="margin:0">
-        <div class="progress-label">
-          <span>Avancement</span>
-          <span id="prog-label">0%</span>
-        </div>
+        <div class="progress-label"><span>Avancement</span><span id="prog-label">0%</span></div>
         <div class="progress-bar-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
       </div>
     </div>
-
     <div class="card">
       <div class="filter-bar" id="fam-pills"></div>
       <div class="filter-bar">
         <input class="search-input" id="srch" placeholder="🔍 Rechercher article ou code..." oninput="renderTable()"/>
         <button class="btn-secondary" onclick="resetCounts()"><i class="ti ti-refresh"></i> Réinitialiser</button>
       </div>
-      <div id="unknown-banner" class="hidden"></div>
       <div class="tbl-wrap">
         <table>
           <thead><tr>
@@ -257,18 +206,16 @@ tr:hover td{background:#faf9f6}
     </div>
   </div>
 
-  <!-- PAGE ECARTS -->
+  <!-- ECARTS -->
   <div id="page-ecarts" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
-      <div class="section-title" style="margin:0" id="ecarts-title">Écarts GMS</div>
+      <div class="section-title" style="margin:0" id="ecarts-title">Écarts</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-secondary" onclick="showPage('comptage')"><i class="ti ti-arrow-left"></i> Modifier</button>
         <button class="btn-primary" onclick="exportCSV()"><i class="ti ti-download"></i> Exporter CSV</button>
       </div>
     </div>
-
     <div class="stat-grid" id="metrics-e"></div>
-
     <div class="card">
       <div class="filter-bar">
         <button class="filter-btn active" id="ef-tous" onclick="setEF('tous')">Tous</button>
@@ -292,17 +239,16 @@ tr:hover td{background:#faf9f6}
     </div>
   </div>
 
-  <!-- PAGE CONFIG -->
+  <!-- CONFIG -->
   <div id="page-config" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
       <div class="section-title" style="margin:0">Configuration GMS / Prestige</div>
       <span class="saving" id="saving-indicator"></span>
     </div>
-    <p style="font-size:13px;color:var(--gray);margin-bottom:1rem">Basculez chaque article entre GMS et Prestige. Les changements sont synchronisés sur tous les appareils.</p>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1rem">Basculez chaque article entre GMS et Prestige. Synchronisé sur tous les appareils.</p>
     <div style="margin-bottom:1.25rem">
-      <button class="btn-secondary" onclick="window.resetFirebaseFromExcel()" style="border-color:#fecaca;color:#dc2626"><i class="ti ti-refresh"></i> Réinitialiser depuis l'Excel (corrige les erreurs)</button>
+      <button class="btn-secondary" onclick="resetFirebaseFromExcel()" style="border-color:#fecaca;color:#dc2626"><i class="ti ti-refresh"></i> Réinitialiser depuis l'Excel</button>
     </div>
-
     <div class="card">
       <div class="filter-bar">
         <button class="filter-btn active" id="cf-tous" onclick="setCF('tous')">Tous</button>
@@ -312,15 +258,29 @@ tr:hover td{background:#faf9f6}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr>
-            <th>Code</th><th>Article</th><th>Famille</th><th>Équipe</th>
-          </tr></thead>
+          <thead><tr><th>Code</th><th>Article</th><th>Famille</th><th>Équipe</th></tr></thead>
           <tbody id="cfg-body"></tbody>
         </table>
       </div>
     </div>
   </div>
 
+</div>
+
+<!-- MODAL ATTRIBUTION -->
+<div class="modal-bg" id="modal-undef">
+  <div class="modal-box">
+    <div class="modal-title">
+      <i class="ti ti-alert-triangle" style="color:var(--gold);font-size:20px"></i>
+      Articles sans attribution
+    </div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Ces articles sont dans le stock mais ne sont pas encore assignés. Définissez-les pour continuer — mémorisé pour les prochaines fois.</p>
+    <div id="undef-list"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap;border-top:1px solid var(--gray-light);padding-top:1.25rem">
+      <button class="btn-secondary" onclick="cancelUndefined()"><i class="ti ti-x"></i> Annuler</button>
+      <button class="btn-primary" onclick="saveUndefined()"><i class="ti ti-device-floppy"></i> Enregistrer et continuer</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -345,221 +305,203 @@ const db = getFirestore(fbApp);
 let allArticles = [];
 let articles = [];
 let assignments = {};
+let confirmed = new Set();
 let currentTeam = '';
 let famFilter = 'TOUS';
 let ecartFilter = 'tous';
 let cfFilter = 'tous';
+let pendingTeam = '';
 let saveTimeout = null;
+let undefSelections = {};
 
 // ── FIREBASE ──
-async function loadAssignments() {
+function loadAssignments() {
   setSyncStatus('loading', 'Connexion...');
-  try {
-    onSnapshot(doc(db, 'config', 'assignments'), snap => {
-      if(snap.exists()) assignments = snap.data().data || {};
-      setSyncStatus('ok', 'Synchronisé');
-      updateHomeCounts();
-      if(document.getElementById('page-config').style.display !== 'none') renderConfig();
-    });
-  } catch(e) {
-    setSyncStatus('error', 'Hors ligne');
-  }
+  onSnapshot(doc(db, 'config', 'assignments'), snap => {
+    if (snap.exists()) {
+      assignments = snap.data().data || {};
+      confirmed = new Set(snap.data().confirmed || []);
+    }
+    setSyncStatus('ok', 'Synchronisé');
+    updateHomeCounts();
+    if (document.getElementById('page-config').style.display !== 'none') renderConfig();
+  }, () => setSyncStatus('error', 'Hors ligne'));
 }
 
 async function saveAssignments() {
   document.getElementById('saving-indicator').textContent = 'Sauvegarde...';
   try {
-    await setDoc(doc(db, 'config', 'assignments'), { data: assignments });
+    await setDoc(doc(db, 'config', 'assignments'), {
+      data: assignments,
+      confirmed: Array.from(confirmed)
+    });
     document.getElementById('saving-indicator').textContent = '✓ Sauvegardé';
     setTimeout(() => document.getElementById('saving-indicator').textContent = '', 2000);
-    toast('Configuration sauvegardée');
   } catch(e) {
     document.getElementById('saving-indicator').textContent = '⚠ Erreur';
   }
 }
 
-function setSyncStatus(state, label) {
-  const dot = document.getElementById('sync-dot');
-  dot.className = 'sync-dot ' + state;
-  document.getElementById('sync-label').textContent = label;
+function setSyncStatus(s, l) {
+  document.getElementById('sync-dot').className = 'sync-dot ' + s;
+  document.getElementById('sync-label').textContent = l;
 }
 
 function getEquipe(a) {
-  // Colonne A du fichier Excel = source de vérité principale
-  // Firebase sert uniquement pour les modifications manuelles via la page Config
-  if(a.equipe === 'GMS') return 'GMS';
-  // Article Prestige dans Excel : vérifier si basculé manuellement en GMS via Config
-  if(assignments[a.code] === 'GMS') return 'GMS';
-  return 'PRESTIGE';
+  // Excel col A = GMS → toujours GMS
+  if (a.equipe === 'GMS') return 'GMS';
+  // Sinon Firebase override ou Prestige par défaut
+  return assignments[a.code] === 'GMS' ? 'GMS' : 'PRESTIGE';
 }
 
 function toast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ── UPLOAD ──
 const fileInput = document.getElementById('file-input');
 const dropZone = document.getElementById('drop-zone');
-fileInput.addEventListener('change', e => { if(e.target.files[0]) readFile(e.target.files[0]); });
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--gold)'; });
-dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--gold)'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; });
 dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.style.borderColor='';
-  if(e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+  e.preventDefault(); dropZone.style.borderColor = '';
+  if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
 });
 
 function readFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
-    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    allArticles = rows.map((r,i) => ({
-      id: i+1,
-      equipe: String(r[0]||'').toUpperCase().trim()==='GMS' ? 'GMS' : 'PRESTIGE',
-      famille: String(r[1]||''),
-      code: String(r[2]||''),
-      article: String(r[3]||''),
-      nb_colis: parseInt(r[5])||0,
+    allArticles = rows.map((r, i) => ({
+      id: i + 1,
+      equipe: String(r[0] || '').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE',
+      famille: String(r[1] || ''),
+      code: String(r[2] || ''),
+      article: String(r[3] || ''),
+      nb_colis: parseInt(r[5]) || 0,
       compte: null
     })).filter(a => a.famille);
-    // Auto-save only truly new articles (not already in Firebase)
-    // Never overwrite Excel GMS with Firebase PRESTIGE
-    let changed = false;
-    allArticles.forEach(a => {
-      // If Excel says GMS, always correct Firebase if it's wrong
-      if(a.equipe === 'GMS' && assignments[a.code] !== 'GMS') {
-        assignments[a.code] = 'GMS'; changed = true;
-      }
-    });
-    if(changed) saveAssignments();
-    document.getElementById('upload-ok').textContent = `✓ ${file.name} — ${allArticles.length} articles chargés`;
+    document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
-    toast(`${allArticles.length} articles chargés`);
+    toast(allArticles.length + ' articles chargés');
   };
   reader.readAsArrayBuffer(file);
 }
 
 // ── PAGES ──
 window.showPage = function(p) {
-  ['home','comptage','ecarts','config'].forEach(id => {
-    document.getElementById('page-'+id).style.display = id===p ? 'block' : 'none';
+  ['home', 'comptage', 'ecarts', 'config'].forEach(id => {
+    document.getElementById('page-' + id).style.display = id === p ? 'block' : 'none';
+    const btn = document.getElementById('nav-' + id);
+    if (btn) btn.classList.toggle('active', id === p);
   });
-  ['home','comptage','ecarts','config'].forEach(id => {
-    const btn = document.getElementById('nav-'+id);
-    if(btn) btn.classList.toggle('active', id===p);
-  });
-  if(p==='ecarts') { updateMetricsE(); renderEcarts(); }
-  if(p==='comptage') { updateMetricsC(); renderTable(); }
-  if(p==='config') renderConfig();
+  if (p === 'ecarts') { updateMetricsE(); renderEcarts(); }
+  if (p === 'comptage') { updateMetricsC(); renderTable(); }
+  if (p === 'config') renderConfig();
 };
 
 window.addEventListener('load', () => {
-  if(typeof STOCK_DATA !== 'undefined') {
-    allArticles = STOCK_DATA.map(d => ({...d, compte: null}));
+  if (typeof STOCK_DATA !== 'undefined') {
+    allArticles = STOCK_DATA.map(d => ({ ...d, compte: null }));
   }
   loadAssignments();
 });
 
 function updateHomeCounts() {
-  const gms = allArticles.filter(a => getEquipe(a)==='GMS').length;
-  const pres = allArticles.filter(a => getEquipe(a)==='PRESTIGE').length;
+  const gms = allArticles.filter(a => getEquipe(a) === 'GMS').length;
+  const pres = allArticles.filter(a => getEquipe(a) === 'PRESTIGE').length;
   document.getElementById('gms-count').textContent = gms;
   document.getElementById('prestige-count').textContent = pres;
 }
 
-// ── SESSION ──
-let _pendingTeam = '';
-
+// ── SESSION + POPUP ──
 window.startSession = function(team) {
-  if(!allArticles.length) { toast('Chargez d\'abord le fichier Excel'); return; }
-  // Check for articles not yet in Firebase assignments
-  const undefined_articles = allArticles.filter(a => assignments[a.code] === undefined);
-  if(undefined_articles.length > 0) {
-    _pendingTeam = team;
-    openUndefModal(undefined_articles);
+  if (!allArticles.length) { toast("Chargez d'abord le fichier Excel"); return; }
+  // Articles pas encore confirmés = nouveaux articles jamais attribués
+  const unconfirmed = allArticles.filter(a => !confirmed.has(a.code));
+  if (unconfirmed.length > 0) {
+    pendingTeam = team;
+    openUndefModal(unconfirmed);
     return;
   }
   launchSession(team);
 };
 
-function openUndefModal(undef_articles) {
-  // Init each article with no selection
-  window._undefSelections = {};
-  const list = document.getElementById('undef-list');
-  list.innerHTML = undef_articles.map(a => `
-    <div class="undef-row" id="urow-${a.id}">
-      <div class="undef-info">
-        <div class="undef-name">${a.article}</div>
-        <div class="undef-code">${a.code} — ${a.famille}</div>
-      </div>
-      <div class="undef-btns">
-        <button class="undef-btn" id="ubtn-gms-${a.id}" onclick="window.selectUndef(${a.id},'${a.code}','GMS')">GMS</button>
-        <button class="undef-btn" id="ubtn-pres-${a.id}" onclick="window.selectUndef(${a.id},'${a.code}','PRESTIGE')">Prestige</button>
-      </div>
-    </div>
-  `).join('');
+function openUndefModal(list) {
+  undefSelections = {};
+  document.getElementById('undef-list').innerHTML = list.map(a =>
+    '<div class="undef-row" id="urow-' + a.id + '">' +
+      '<div class="undef-info">' +
+        '<div class="undef-name">' + a.article + '</div>' +
+        '<div class="undef-code">' + a.code + ' — ' + a.famille + '</div>' +
+      '</div>' +
+      '<div class="undef-btns">' +
+        '<button class="undef-btn" id="ub-gms-' + a.id + '" onclick="window.selectUndef(' + a.id + ',\'' + a.code + '\',\'GMS\')">GMS</button>' +
+        '<button class="undef-btn" id="ub-pre-' + a.id + '" onclick="window.selectUndef(' + a.id + ',\'' + a.code + '\',\'PRESTIGE\')">Prestige</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
   document.getElementById('modal-undef').classList.add('open');
 }
 
 window.selectUndef = function(id, code, equipe) {
-  window._undefSelections[code] = equipe;
-  const gmsBtn = document.getElementById('ubtn-gms-'+id);
-  const presBtn = document.getElementById('ubtn-pres-'+id);
-  gmsBtn.className = 'undef-btn' + (equipe==='GMS' ? ' sel-gms' : '');
-  presBtn.className = 'undef-btn' + (equipe==='PRESTIGE' ? ' sel-prestige' : '');
+  undefSelections[code] = equipe;
+  document.getElementById('ub-gms-' + id).className = 'undef-btn' + (equipe === 'GMS' ? ' sel-gms' : '');
+  document.getElementById('ub-pre-' + id).className = 'undef-btn' + (equipe === 'PRESTIGE' ? ' sel-prestige' : '');
 };
 
 window.cancelUndefined = function() {
   document.getElementById('modal-undef').classList.remove('open');
-  _pendingTeam = '';
+  pendingTeam = '';
 };
 
 window.saveUndefined = async function() {
-  const sels = window._undefSelections || {};
-  // Check all are assigned
-  const undef_articles = allArticles.filter(a => assignments[a.code] === undefined);
-  const missing = undef_articles.filter(a => !sels[a.code]);
-  if(missing.length > 0) {
-    toast('Veuillez attribuer tous les articles (' + missing.length + ' restants)');
+  const unconfirmed = allArticles.filter(a => !confirmed.has(a.code));
+  const missing = unconfirmed.filter(a => !undefSelections[a.code]);
+  if (missing.length > 0) {
+    toast(missing.length + ' article(s) non attribués');
     return;
   }
-  // Save to Firebase
-  Object.assign(assignments, sels);
+  Object.assign(assignments, undefSelections);
+  unconfirmed.forEach(a => confirmed.add(a.code));
   await saveAssignments();
   document.getElementById('modal-undef').classList.remove('open');
   updateHomeCounts();
-  launchSession(_pendingTeam);
+  launchSession(pendingTeam);
 };
 
 function launchSession(team) {
   currentTeam = team;
-  articles = allArticles.filter(a => getEquipe(a)===team).map(a => ({...a, compte: null}));
+  articles = allArticles.filter(a => getEquipe(a) === team).map(a => ({ ...a, compte: null }));
   famFilter = 'TOUS'; ecartFilter = 'tous';
   document.getElementById('comptage-title').textContent = 'Comptage ' + team;
   document.getElementById('ecarts-title').textContent = 'Écarts ' + team;
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.remove('hidden');
   buildFamPills();
-  showPage('comptage');
-};
+  window.showPage('comptage');
+}
 
 // ── FAM PILLS ──
 function buildFamPills() {
   const fams = ['TOUS', ...[...new Set(articles.map(a => a.famille))].sort()];
   document.getElementById('fam-pills').innerHTML = fams.map(f =>
-    `<button class="filter-btn${f==='TOUS'?' active':''}" onclick="window.setFam('${f.replace(/'/g,"\\'")}')">${f==='TOUS'?'Toutes':f}</button>`
+    '<button class="filter-btn' + (f === 'TOUS' ? ' active' : '') + '" onclick="window.setFam(\'' + f.replace(/'/g, "\\'") + '\')">' + (f === 'TOUS' ? 'Toutes' : f) + '</button>'
   ).join('');
 }
 
 window.setFam = function(f) {
   famFilter = f;
   document.querySelectorAll('#fam-pills .filter-btn').forEach(el =>
-    el.classList.toggle('active', el.textContent.trim()===(f==='TOUS'?'Toutes':f))
+    el.classList.toggle('active', el.textContent.trim() === (f === 'TOUS' ? 'Toutes' : f))
   );
   renderTable();
 };
@@ -569,108 +511,95 @@ const counted = a => a.compte !== null;
 const ecart = a => a.compte - a.nb_colis;
 
 window.setCount = function(id, val) {
-  const a = articles.find(x => x.id===id);
-  if(!a) return;
-  a.compte = val==='' ? null : Math.max(0, parseFloat(val)||0);
+  const a = articles.find(x => x.id === id);
+  if (!a) return;
+  a.compte = val === '' ? null : Math.max(0, parseFloat(val) || 0);
   updateMetricsC();
 };
 
 function updateMetricsC() {
   const tot = articles.length, done = articles.filter(counted).length;
-  const pct = tot ? Math.round(done/tot*100) : 0;
-  document.getElementById('prog').style.width = pct+'%';
-  document.getElementById('prog-label').textContent = pct+'%';
-  document.getElementById('metrics-c').innerHTML = `
-    <div class="stat-card"><div class="num">${tot}</div><div class="lbl">Total articles</div></div>
-    <div class="stat-card green"><div class="num">${done}</div><div class="lbl">Comptés</div></div>
-    <div class="stat-card amber"><div class="num">${tot-done}</div><div class="lbl">Restants</div></div>
-    <div class="stat-card gold"><div class="num">${pct}%</div><div class="lbl">Avancement</div></div>`;
+  const pct = tot ? Math.round(done / tot * 100) : 0;
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = pct + '%';
+  document.getElementById('metrics-c').innerHTML =
+    '<div class="stat-card"><div class="num">' + tot + '</div><div class="lbl">Total</div></div>' +
+    '<div class="stat-card green"><div class="num">' + done + '</div><div class="lbl">Comptés</div></div>' +
+    '<div class="stat-card amber"><div class="num">' + (tot - done) + '</div><div class="lbl">Restants</div></div>' +
+    '<div class="stat-card gold"><div class="num">' + pct + '%</div><div class="lbl">Avancement</div></div>';
 }
 
 function renderTable() {
-  const q = (document.getElementById('srch')||{value:''}).value.toLowerCase();
+  const q = document.getElementById('srch').value.toLowerCase();
   let rows = articles.filter(a => {
-    if(famFilter!=='TOUS' && a.famille!==famFilter) return false;
-    if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+    if (famFilter !== 'TOUS' && a.famille !== famFilter) return false;
+    if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
     return true;
   });
-  if(!rows.length) {
-    document.getElementById('tbl-body').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ti ti-search"></i>Aucun article trouvé</td></tr>';
-    return;
-  }
+  if (!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   let html = '', lastFam = '';
   rows.forEach(a => {
-    if(famFilter==='TOUS' && a.famille!==lastFam) {
-      html += `<tr class="fam-row"><td colspan="6">${a.famille}</td></tr>`;
+    if (famFilter === 'TOUS' && a.famille !== lastFam) {
+      html += '<tr class="fam-row"><td colspan="6">' + a.famille + '</td></tr>';
       lastFam = a.famille;
     }
-    html += `<tr>
-      <td class="code-c">${a.code}</td>
-      <td style="font-weight:500">${a.article}</td>
-      <td style="font-size:12px;color:var(--gray)">${famFilter==='TOUS'?'':a.famille}</td>
-      <td style="text-align:right;font-weight:700">${a.nb_colis}</td>
-      <td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="${counted(a)?a.compte:''}" onchange="window.setCount(${a.id},this.value)"/></td>
-      <td style="text-align:right;font-weight:700">${counted(a)?a.compte:'—'}</td>
-    </tr>`;
+    html += '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + (famFilter === 'TOUS' ? '' : a.famille) + '</td><td style="text-align:right;font-weight:700">' + a.nb_colis + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td><td style="text-align:right;font-weight:700">' + (counted(a) ? a.compte : '—') + '</td></tr>';
   });
   document.getElementById('tbl-body').innerHTML = html;
 }
 
 function updateMetricsE() {
-  const c=articles.filter(counted), we=c.filter(a=>ecart(a)!==0);
-  const surp=c.filter(a=>ecart(a)>0), manq=c.filter(a=>ecart(a)<0), nc=articles.filter(a=>!counted(a));
-  document.getElementById('metrics-e').innerHTML = `
-    <div class="stat-card green"><div class="num">${c.length-we.length}</div><div class="lbl">Sans écart</div></div>
-    <div class="stat-card red"><div class="num">${we.length}</div><div class="lbl">Avec écart</div></div>
-    <div class="stat-card amber"><div class="num">${surp.length}</div><div class="lbl">Surplus</div></div>
-    <div class="stat-card red"><div class="num">${manq.length}</div><div class="lbl">Manquants</div></div>`;
+  const c = articles.filter(counted), we = c.filter(a => ecart(a) !== 0);
+  const surp = c.filter(a => ecart(a) > 0), manq = c.filter(a => ecart(a) < 0), nc = articles.filter(a => !counted(a));
+  document.getElementById('metrics-e').innerHTML =
+    '<div class="stat-card green"><div class="num">' + (c.length - we.length) + '</div><div class="lbl">Sans écart</div></div>' +
+    '<div class="stat-card red"><div class="num">' + we.length + '</div><div class="lbl">Avec écart</div></div>' +
+    '<div class="stat-card amber"><div class="num">' + surp.length + '</div><div class="lbl">Surplus</div></div>' +
+    '<div class="stat-card red"><div class="num">' + manq.length + '</div><div class="lbl">Manquants</div></div>';
 }
 
 window.setEF = function(f) {
   ecartFilter = f;
-  ['tous','ecart','ok','nc'].forEach(t => document.getElementById('ef-'+t).classList.toggle('active',t===f));
+  ['tous', 'ecart', 'ok', 'nc'].forEach(t => document.getElementById('ef-' + t).classList.toggle('active', t === f));
   renderEcarts();
 };
 
 function renderEcarts() {
-  const q = (document.getElementById('srch2')||{value:''}).value.toLowerCase();
+  const q = document.getElementById('srch2').value.toLowerCase();
   let rows = articles.filter(a => {
-    if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
-    if(ecartFilter==='ecart') return counted(a)&&ecart(a)!==0;
-    if(ecartFilter==='ok') return counted(a)&&ecart(a)===0;
-    if(ecartFilter==='nc') return !counted(a);
+    if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+    if (ecartFilter === 'ecart') return counted(a) && ecart(a) !== 0;
+    if (ecartFilter === 'ok') return counted(a) && ecart(a) === 0;
+    if (ecartFilter === 'nc') return !counted(a);
     return true;
   });
-  if(!rows.length) {
-    document.getElementById('etbl-body').innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ti ti-check"></i>Aucun article</td></tr>';
-    return;
-  }
+  if (!rows.length) { document.getElementById('etbl-body').innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ti ti-check"></i>Aucun article</td></tr>'; return; }
   document.getElementById('etbl-body').innerHTML = rows.map(a => {
-    if(!counted(a)) return `<tr><td class="code-c">${a.code}</td><td style="font-weight:500">${a.article}</td><td style="font-size:12px;color:var(--gray)">${a.famille}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;color:var(--gray)">—</td><td>—</td><td><span class="badge badge-nc">Non compté</span></td></tr>`;
-    const e=ecart(a), sign=e>0?'+':'';
-    const cls=e>0?'ep':e<0?'en':'ez';
-    const badge=e===0?'<span class="badge badge-ok">OK</span>':e>0?'<span class="badge badge-surplus">Surplus</span>':'<span class="badge badge-manque">Manque</span>';
-    return `<tr><td class="code-c">${a.code}</td><td style="font-weight:500">${a.article}</td><td style="font-size:12px;color:var(--gray)">${a.famille}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;font-weight:700">${a.compte}</td><td class="${cls}" style="text-align:right">${sign}${e}</td><td>${badge}</td></tr>`;
+    if (!counted(a)) return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;color:var(--gray)">—</td><td>—</td><td><span class="badge badge-nc">Non compté</span></td></tr>';
+    const e = ecart(a), sign = e > 0 ? '+' : '';
+    const cls = e > 0 ? 'ep' : e < 0 ? 'en' : 'ez';
+    const badge = e === 0 ? '<span class="badge badge-ok">OK</span>' : e > 0 ? '<span class="badge badge-surplus">Surplus</span>' : '<span class="badge badge-manque">Manque</span>';
+    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
   }).join('');
 }
 
 window.resetCounts = function() {
-  if(!confirm('Réinitialiser tous les comptages ?')) return;
-  articles.forEach(a => a.compte=null);
+  if (!confirm('Réinitialiser tous les comptages ?')) return;
+  articles.forEach(a => a.compte = null);
   updateMetricsC(); renderTable();
 };
 
 window.exportCSV = function() {
   const now = new Date().toLocaleString('fr-FR');
-  let csv = `Inventaire ${currentTeam} — ${now}\nCode,Article,Famille,Stock système,Compté,Écart,Statut\n`;
+  let csv = 'Inventaire ' + currentTeam + ' — ' + now + '\nCode,Article,Famille,Stock système,Compté,Écart,Statut\n';
   articles.forEach(a => {
-    const e=counted(a)?ecart(a):'', st=!counted(a)?'Non compté':e===0?'OK':e>0?'Surplus':'Manque';
-    csv+=`"${a.code}","${a.article}","${a.famille}",${a.nb_colis},${counted(a)?a.compte:''},${e},"${st}"\n`;
+    const e = counted(a) ? ecart(a) : '', st = !counted(a) ? 'Non compté' : e === 0 ? 'OK' : e > 0 ? 'Surplus' : 'Manque';
+    csv += '"' + a.code + '","' + a.article + '","' + a.famille + '",' + a.nb_colis + ',' + (counted(a) ? a.compte : '') + ',' + e + ',"' + st + '"\n';
   });
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const lnk=document.createElement('a');
-  lnk.href=url; lnk.download=`inventaire_${currentTeam.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`;
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const lnk = document.createElement('a');
+  lnk.href = url; lnk.download = 'inventaire_' + currentTeam.toLowerCase() + '_' + new Date().toISOString().slice(0, 10) + '.csv';
   lnk.click(); URL.revokeObjectURL(url);
   toast('Export CSV téléchargé');
 };
@@ -678,90 +607,51 @@ window.exportCSV = function() {
 // ── CONFIG ──
 window.setCF = function(f) {
   cfFilter = f;
-  ['tous','gms','prestige'].forEach(t => {
-    const el = document.getElementById('cf-'+t);
-    if(el) el.classList.toggle('active', (f==='tous'&&t==='tous')||(f==='GMS'&&t==='gms')||(f==='PRESTIGE'&&t==='prestige'));
+  ['tous', 'gms', 'prestige'].forEach(t => {
+    const el = document.getElementById('cf-' + t);
+    if (el) el.classList.toggle('active', (f === 'tous' && t === 'tous') || (f === 'GMS' && t === 'gms') || (f === 'PRESTIGE' && t === 'prestige'));
   });
   renderConfig();
 };
 
 window.toggleAssignment = async function(code, current) {
-  assignments[code] = current==='GMS' ? 'PRESTIGE' : 'GMS';
+  assignments[code] = current === 'GMS' ? 'PRESTIGE' : 'GMS';
+  confirmed.add(code);
   renderConfig(); updateHomeCounts();
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveAssignments, 800);
 };
 
 function renderConfig() {
-  const q = (document.getElementById('cfg-srch')||{value:''}).value.toLowerCase();
+  const q = document.getElementById('cfg-srch').value.toLowerCase();
   let rows = allArticles.filter(a => {
-    if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+    if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
     const eq = getEquipe(a);
-    if(cfFilter==='GMS' && eq!=='GMS') return false;
-    if(cfFilter==='PRESTIGE' && eq!=='PRESTIGE') return false;
+    if (cfFilter === 'GMS' && eq !== 'GMS') return false;
+    if (cfFilter === 'PRESTIGE' && eq !== 'PRESTIGE') return false;
     return true;
   });
-  if(!rows.length) {
-    document.getElementById('cfg-body').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>';
-    return;
-  }
+  if (!rows.length) { document.getElementById('cfg-body').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   document.getElementById('cfg-body').innerHTML = rows.map(a => {
     const eq = getEquipe(a);
-    return `<tr>
-      <td class="code-c">${a.code}</td>
-      <td style="font-weight:500">${a.article}</td>
-      <td style="font-size:12px;color:var(--gray)">${a.famille}</td>
-      <td>
-        <div class="toggle-wrap">
-          <button class="toggle-btn${eq==='GMS'?' gms-on':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">GMS</button>
-          <button class="toggle-btn${eq==='PRESTIGE'?' prestige-on':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">Prestige</button>
-        </div>
-      </td>
-    </tr>`;
+    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td><div class="toggle-wrap"><button class="toggle-btn' + (eq === 'GMS' ? ' gms-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">GMS</button><button class="toggle-btn' + (eq === 'PRESTIGE' ? ' prestige-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">Prestige</button></div></td></tr>';
   }).join('');
 }
 
-window.renderTable = renderTable;
-window.renderEcarts = renderEcarts;
-window.renderConfig = renderConfig;
-
-// Reset Firebase assignments from Excel column A (fixes wrong data)
 window.resetFirebaseFromExcel = async function() {
-  if(!allArticles.length) { toast('Chargez d'abord le fichier Excel'); return; }
-  if(!confirm('Réinitialiser toutes les attributions depuis la colonne A du fichier Excel ? Les modifications manuelles seront perdues.')) return;
+  if (!allArticles.length) { toast("Chargez d'abord le fichier Excel"); return; }
+  if (!confirm('Réinitialiser toutes les attributions depuis la colonne A du fichier Excel ?')) return;
   assignments = {};
-  allArticles.forEach(a => { assignments[a.code] = a.equipe; });
+  confirmed = new Set();
+  allArticles.forEach(a => {
+    assignments[a.code] = a.equipe;
+    confirmed.add(a.code);
+  });
   await saveAssignments();
   updateHomeCounts();
   renderConfig();
-  toast('Attributions réinitialisées depuis l'Excel');
+  toast('Attributions réinitialisées');
 };
 </script>
-    </div>
-    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Ces articles sont dans le stock mais ne sont pas encore assignés à GMS ou Prestige. Définissez-les avant de continuer.</p>
-    <div id="undefined-list"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap">
-      <button class="btn-secondary" onclick="cancelUndefined()"><i class="ti ti-x"></i> Annuler</button>
-      <button class="btn-primary" onclick="saveUndefined()"><i class="ti ti-device-floppy"></i> Enregistrer et continuer</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="modal-bg" id="modal-undef">
-  <div class="modal-box">
-    <div class="modal-title">
-      <i class="ti ti-alert-triangle" style="color:var(--gold);font-size:20px"></i>
-      Articles sans attribution
-    </div>
-    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Ces articles sont dans le stock mais ne sont pas encore assignés. Définissez-les pour continuer.</p>
-    <div id="undef-list"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap;border-top:1px solid var(--gray-light);padding-top:1.25rem">
-      <button class="btn-secondary" onclick="window.cancelUndefined()"><i class="ti ti-x"></i> Annuler</button>
-      <button class="btn-primary" id="btn-save-undef" onclick="window.saveUndefined()"><i class="ti ti-device-floppy"></i> Enregistrer et continuer</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
