@@ -254,6 +254,7 @@ tr:hover td{background:#faf9f6}
           <div id="add-article-suggestions" class="add-article-suggestions" style="display:none"></div>
         </div>
         <input type="number" id="add-article-qty" min="0" placeholder="Qté" style="width:70px;padding:8px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:13px;font-family:inherit;text-align:center;outline:none"/>
+        <input type="text" id="add-article-comment" placeholder="Commentaire..." style="flex:1;min-width:120px;padding:8px 12px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:13px;font-family:inherit;outline:none"/>
         <button class="btn-primary" style="padding:8px 14px;font-size:13px" onclick="addArticleManuel()"><i class="ti ti-plus"></i> Ajouter</button>
       </div>
     </div>
@@ -546,7 +547,7 @@ window.recompterDepuis = async function(dateStr) {
       showTeamCard(data.filename, allArticles.length, dateStr, dateStr === TODAY);
       toast('Stock du ' + dateStr + ' - ' + allArticles.length + ' articles');
       // Hide upload, show team card only
-      document.getElementById('upload-card').style.display = 'none';
+  
       document.getElementById('team-select-card').style.display = 'block';
       window.showPage('home');
     }
@@ -729,7 +730,7 @@ function renderTable() {
     const otherTeam = currentTeam === 'GMS' ? 'Prestige' : 'GMS';
     const moveBtn = '<button onclick="window.moveToOther(' + a.id + ')" title="Passer en ' + otherTeam + '" style="padding:3px 8px;border:1px solid var(--gray-light);border-radius:6px;background:transparent;color:var(--gray);cursor:pointer;font-size:11px;white-space:nowrap">' + otherTeam + ' →</button>';
     html += '<tr>' +
-      '<td style="font-weight:500">' + a.article + '<br><span style="margin-top:4px;display:inline-block">' + moveBtn + '</span></td>' +
+      '<td style="font-weight:500">' + a.article + (a.comment ? '<br><span style="font-size:11px;color:var(--gray);font-style:italic">' + a.comment + '</span>' : '') + '<br><span style="margin-top:4px;display:inline-block">' + moveBtn + '</span></td>' +
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">' + inp + '</div></td>' +
       '<td style="text-align:center">' + destroyInput + '</td>' +
       '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '-') + '</td>' +
@@ -839,7 +840,6 @@ function showTeamCard(filename, nb, dateId, isToday) {
     '<i class="ti ti-circle-check" style="color:' + color + ';margin-right:6px"></i>' +
     '<span style="font-weight:600;color:' + color + '">' + label + '</span>' +
     ' — ' + filename + ' · ' + nb + ' articles';
-  if (uploadCard) uploadCard.style.display = 'none';
   card.style.display = 'block';
 }
 
@@ -978,8 +978,10 @@ window.exportPDF = function() {
   const now = new Date().toLocaleString('fr-FR');
   const team = currentTeam;
 
-  // Split articles: problems first, then OK
-  const withEcart = articles.filter(a => counted(a) && (ecart(a) !== 0 || (a.detruire && a.detruire > 0)));
+  // Split articles into 4 groups
+  const excedant = articles.filter(a => counted(a) && ecart(a) > 0);
+  const manquant = articles.filter(a => counted(a) && ecart(a) < 0);
+  const destruction = articles.filter(a => counted(a) && ecart(a) === 0 && a.detruire && a.detruire > 0);
   const ok = articles.filter(a => counted(a) && ecart(a) === 0 && (!a.detruire || a.detruire === 0));
   const nc = articles.filter(a => !counted(a));
 
@@ -990,7 +992,7 @@ window.exportPDF = function() {
     const destroy = a.detruire ? '<td style="text-align:center;color:#dc2626;font-weight:600">' + a.detruire + '</td>' : '<td style="text-align:center;color:#999">—</td>';
     const bgrow = highlight ? 'background:#fff5f5' : '';
     return '<tr style="' + bgrow + '">' +
-      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + '</td>' +
+      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + (a.comment ? '<br><span style="font-size:11px;color:#6b7280;font-style:italic">' + a.comment + '</span>' : '') + '</td>' +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px">' + a.nb_colis + '</td>' +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px;font-weight:600">' + (counted(a) ? a.compte : '—') + '</td>' +
       destroy.replace('<td', '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px;text-align:center;color:' + (a.detruire ? '#dc2626' : '#999') + ';font-weight:' + (a.detruire ? '600' : '400') + '"') +
@@ -1011,15 +1013,31 @@ window.exportPDF = function() {
     '<h1>🌿 Moorea · Inventaire ' + team + '</h1>' +
     '<div class="sub">' + now + ' · ' + articles.length + ' articles</div>' +
 
-    (withEcart.length ? (
-      '<div class="section-label red">⚠ Articles avec écart ou destruction (' + withEcart.length + ')</div>' +
+    (manquant.length ? (
+      '<div class="section-label red">▼ Manquants — stock inférieur (' + manquant.length + ')</div>' +
       '<table><thead>' + thead + '</thead><tbody>' +
-      withEcart.map(a => row(a, true)).join('') +
+      manquant.map(a => row(a, true)).join('') +
       '</tbody></table>'
-    ) : '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#15803d;margin-bottom:16px">✓ Aucun écart ni destruction</div>') +
+    ) : '') +
+
+    (excedant.length ? (
+      '<div class="section-label" style="color:#b45309;margin-top:16px">▲ Excédents — stock supérieur (' + excedant.length + ')</div>' +
+      '<table><thead>' + thead + '</thead><tbody>' +
+      excedant.map(a => row(a, true)).join('') +
+      '</tbody></table>'
+    ) : '') +
+
+    (destruction.length ? (
+      '<div class="section-label red" style="margin-top:16px">🗑 À détruire — stock OK mais colis abîmés (' + destruction.length + ')</div>' +
+      '<table><thead>' + thead + '</thead><tbody>' +
+      destruction.map(a => row(a, true)).join('') +
+      '</tbody></table>'
+    ) : '') +
+
+    (!manquant.length && !excedant.length && !destruction.length ? '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#15803d;margin-bottom:16px">✓ Aucun écart ni destruction</div>' : '') +
 
     (nc.length ? (
-      '<div class="section-label red" style="margin-top:16px">⚡ Non comptés (' + nc.length + ')</div>' +
+      '<div class="section-label" style="color:#6b7280;margin-top:16px">⚡ Non comptés (' + nc.length + ')</div>' +
       '<table><thead>' + thead + '</thead><tbody>' +
       nc.map(a => row(a, false)).join('') +
       '</tbody></table>'
@@ -1105,6 +1123,7 @@ window.addArticleManuel = function() {
   const qtyInput = document.getElementById('add-article-qty');
   const val = input.value.trim();
   const qty = parseFloat(qtyInput.value) || 0;
+  const comment = document.getElementById('add-article-comment').value.trim();
   if (!val) { toast('Entrez le nom de l\'article'); return; }
 
   let newArticle;
@@ -1123,6 +1142,7 @@ window.addArticleManuel = function() {
       compte2: null,
       compte3: null,
       detruire: null,
+      comment,
       _extra: true
     };
   } else {
@@ -1138,6 +1158,7 @@ window.addArticleManuel = function() {
       compte2: null,
       compte3: null,
       detruire: null,
+      comment,
       _extra: true
     };
   }
@@ -1146,6 +1167,7 @@ window.addArticleManuel = function() {
   input.value = '';
   input.dataset.selected = '';
   qtyInput.value = '';
+  document.getElementById('add-article-comment').value = '';
   updateMetricsC();
   renderTable();
   clearTimeout(comptageTimeout);
