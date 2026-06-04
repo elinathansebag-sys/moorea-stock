@@ -455,7 +455,7 @@ dropZone.addEventListener('drop', e => {
 
 function readFile(file) {
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
@@ -475,8 +475,10 @@ function readFile(file) {
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
     toast(allArticles.length + ' articles chargés');
-    // Save stock to Firebase so all devices can access it
-    saveStockToFirebase(file.name);
+    // Save stock to Firebase
+    document.getElementById('upload-ok').textContent = '⏳ Enregistrement en cours...';
+    await saveStockToFirebase(file.name);
+    document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles enregistrés';
     showTeamCard(file.name, allArticles.length, TODAY, true);
   };
   reader.readAsArrayBuffer(file);
@@ -748,6 +750,7 @@ window.terminerComptage = function() {
 
 
 async function saveStockToFirebase(filename) {
+  setSyncStatus('loading', 'Enregistrement...');
   try {
     const importData = {
       filename,
@@ -759,7 +762,8 @@ async function saveStockToFirebase(filename) {
       articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis }))
     };
     await setDoc(doc(db, 'stocks', TODAY), importData);
-    toast('Stock sauvegardé et synchronisé');
+    setSyncStatus('ok', 'Enregistré');
+    toast('Stock enregistré et disponible sur tous les appareils');
   } catch(e) { console.error('saveStock error', e); }
 }
 
