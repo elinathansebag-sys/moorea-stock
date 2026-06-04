@@ -214,7 +214,7 @@ tr:hover td{background:#faf9f6}
   <div id="page-comptage" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
       <div class="section-title" style="margin:0" id="comptage-title">Comptage</div>
-
+      <button class="btn-primary" onclick="terminerComptage()"><i class="ti ti-check"></i> Terminer et voir les écarts</button>
     </div>
     <div class="stat-grid" id="metrics-c"></div>
     <div class="card" style="padding:.75rem 1.25rem">
@@ -503,8 +503,9 @@ window.showPage = function(p) {
 };
 
 window.addEventListener('load', async () => {
-  if (typeof STOCK_DATA !== 'undefined') {
-    allArticles = STOCK_DATA.map(d => ({ ...d, compte: null }));
+  const loaded = await loadStockFromFirebase();
+  if (!loaded && typeof STOCK_DATA !== 'undefined') {
+    allArticles = STOCK_DATA.map(d => ({ ...d, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
   }
   loadAssignments();
 });
