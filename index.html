@@ -211,7 +211,10 @@ tr:hover td{background:#faf9f6}
         <table>
           <thead><tr>
             <th>Article</th>
-            <th style="text-align:center">Comptage</th>
+            <th style="text-align:center">Empl. 1</th>
+            <th style="text-align:center">Empl. 2</th>
+            <th style="text-align:center;color:#dc2626">Détruire</th>
+            <th style="text-align:center">Total</th>
           </tr></thead>
           <tbody id="tbl-body"></tbody>
         </table>
@@ -360,7 +363,11 @@ async function saveAssignments() {
 async function saveComptages() {
   if (!currentTeam) return;
   const data = {};
-  articles.forEach(a => { if (a.compte !== null) data[a.code] = a.compte; });
+  articles.forEach(a => {
+    if (a.compte !== null && a.compte !== undefined) {
+      data[a.code] = { c: a.compte, c1: a.compte1 ?? null, c2: a.compte2 ?? null, cd: a.detruire ?? null };
+    }
+  });
   try {
     await setDoc(doc(db, 'comptages', TODAY + '_' + currentTeam), { data, team: currentTeam, date: TODAY, ts: Date.now() });
   } catch(e) { console.error('saveComptages error', e); }
@@ -373,7 +380,15 @@ async function loadComptages(team) {
       const data = snap.data().data || {};
       let count = 0;
       articles.forEach(a => {
-        if (data[a.code] !== undefined) { a.compte = data[a.code]; count++; }
+        if (data[a.code] !== undefined) {
+          const d = data[a.code];
+          if (typeof d === 'object' && d !== null) {
+            a.compte1 = d.c1; a.compte2 = d.c2; a.detruire = d.cd ?? null; a.compte = d.c;
+          } else {
+            a.compte = d; a.compte1 = d; a.compte2 = null;
+          }
+          count++;
+        }
       });
       if (count > 0) toast(count + ' comptages récupérés');
     }
@@ -566,15 +581,24 @@ window.setFam = function(f) {
 };
 
 // ── HELPERS ──
-const counted = a => a.compte !== null;
+const counted = a => a.compte !== null && a.compte !== undefined;
 const ecart = a => a.compte - a.nb_colis;
 
-window.setCount = function(id, val) {
+window.setCount = function(id, loc, val) {
   const a = articles.find(x => x.id === id);
   if (!a) return;
-  a.compte = val === '' ? null : Math.max(0, parseFloat(val) || 0);
+  const v = val === '' ? null : Math.max(0, parseFloat(val) || 0);
+  if (loc === 1) a.compte1 = v;
+  else if (loc === 2) a.compte2 = v;
+  else a.detruire = v;
+  // Total = empl1 + empl2 - detruire
+  const t1 = a.compte1 ?? 0;
+  const t2 = a.compte2 ?? 0;
+  const td = a.detruire ?? 0;
+  const hasCount = a.compte1 !== null && a.compte1 !== undefined || a.compte2 !== null && a.compte2 !== undefined;
+  a.compte = hasCount ? t1 + t2 : null;
   updateMetricsC();
-  // Auto-save to Firebase with debounce
+  renderTable();
   clearTimeout(comptageTimeout);
   comptageTimeout = setTimeout(saveComptages, 1500);
 };
@@ -608,7 +632,18 @@ function renderTable() {
   let html = '', lastFam = '';
   rows.forEach(a => {
 
-    html += '<tr><td style="font-weight:500">' + a.article + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td></tr>';
+    const q1 = a.compte1 !== undefined && a.compte1 !== null ? a.compte1 : '';
+    const q2 = a.compte2 !== undefined && a.compte2 !== null ? a.compte2 : '';
+    const qd = a.detruire !== undefined && a.detruire !== null ? a.detruire : '';
+    const t1 = parseFloat(q1)||0, t2 = parseFloat(q2)||0, td = parseFloat(qd)||0;
+    const tot = t1 + t2;
+    const showTot = q1 !== '' || q2 !== '';
+    html += '<tr><td style="font-weight:500">' + a.article + '</td>' +
+      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + q1 + '" onchange="window.setCount(' + a.id + ',1,this.value)"/></td>' +
+      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + q2 + '" onchange="window.setCount(' + a.id + ',2,this.value)"/></td>' +
+      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="0" value="' + qd + '" style="border-color:#fecaca;color:#dc2626" onchange="window.setCount(' + a.id + ',3,this.value)"/></td>' +
+      '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '—') + '</td>' +
+      '</tr>';
   });
   document.getElementById('tbl-body').innerHTML = html;
 }
@@ -655,17 +690,17 @@ window.terminerComptage = function() {
 
 window.resetCounts = function() {
   if (!confirm('Reinitialiser tous les comptages ?')) return;
-  articles.forEach(a => a.compte = null);
+  articles.forEach(a => { a.compte = null; a.compte1 = null; a.compte2 = null; a.detruire = null; });
   updateMetricsC(); renderTable();
   saveComptages();
 };
 
 window.exportCSV = function() {
   const now = new Date().toLocaleString('fr-FR');
-  let csv = 'Inventaire ' + currentTeam + ' — ' + now + '\nCode,Article,Famille,Stock système,Compté,Écart,Statut\n';
+  let csv = 'Inventaire ' + currentTeam + ' — ' + now + '\nArticle,Stock système,Empl.1,Empl.2,Détruit,Total compté,Écart,Statut\n';
   articles.forEach(a => {
     const e = counted(a) ? ecart(a) : '', st = !counted(a) ? 'Non compté' : e === 0 ? 'OK' : e > 0 ? 'Surplus' : 'Manque';
-    csv += '"' + a.code + '","' + a.article + '","' + a.famille + '",' + a.nb_colis + ',' + (counted(a) ? a.compte : '') + ',' + e + ',"' + st + '"\n';
+    csv += '"' + a.article + '",' + a.nb_colis + ',' + (a.compte1??'') + ',' + (a.compte2??'') + ',' + (a.detruire??'') + ',' + (counted(a) ? a.compte : '') + ',' + e + ',"' + st + '"\n';
   });
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
