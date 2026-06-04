@@ -3,296 +3,317 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Inventaire Stock — GMS & Prestige</title>
+<title>Moorea · Inventaire Stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+:root{--gold:#c8a84b;--gold-border:rgba(200,168,75,0.27);--dark:#0a0a0a;--cream:#f5f3ee;--white:#fff;--gray:#6b7280;--gray-light:#e8e0d0;}
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f8f8f6;--card:#fff;--border:#e5e5e0;--border2:#d0d0ca;
-  --text:#1a1a18;--text2:#6b6b66;--text3:#9b9b96;
-  --gms:#185FA5;--gms-bg:#E6F1FB;--gms-text:#042C53;
-  --prestige:#534AB7;--prestige-bg:#EEEDFE;--prestige-text:#26215C;
-  --green:#27500A;--green-bg:#EAF3DE;
-  --amber:#633806;--amber-bg:#FAEEDA;
-  --red:#791F1F;--red-bg:#FCEBEB;
-  --radius:10px;--radius-sm:6px;
-}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:var(--cream);min-height:100vh}
 .hidden{display:none!important}
 
-/* ── HOME ── */
-.home{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;gap:1.8rem}
-.home h1{font-size:26px;font-weight:700;text-align:center}
-.home .sub{color:var(--text2);font-size:14px;text-align:center}
-.upload-box{width:100%;max-width:460px}
-.upload-box h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:8px}
-.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;background:var(--card);transition:border-color .15s}
-.drop-zone:hover{border-color:#888}
-.drop-zone .icon{font-size:30px}
-.drop-zone p{font-size:14px;color:var(--text2);margin-top:6px}
-.drop-zone small{font-size:12px;color:var(--text3)}
-#file-input{display:none}
-.upload-ok{font-size:13px;color:var(--green);margin-top:8px;text-align:center;min-height:20px}
-.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:460px}
-.team-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.8rem 1rem;text-align:center;cursor:pointer;transition:transform .12s,border-color .12s}
-.team-card:hover{transform:translateY(-2px);border-color:var(--border2)}
-.team-card.gms{border-top:4px solid var(--gms)}
-.team-card.prestige{border-top:4px solid var(--prestige)}
-.team-card .ico{font-size:32px;margin-bottom:10px}
-.team-card h2{font-size:17px;font-weight:700;margin-bottom:4px}
-.team-card.gms h2{color:var(--gms)}
-.team-card.prestige h2{color:var(--prestige)}
-.team-card p{font-size:12px;color:var(--text2)}
-.config-link{font-size:13px;color:var(--text2);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-.config-link:hover{color:var(--text)}
-.sync-status{font-size:12px;color:var(--text3);margin-top:-8px}
+/* TOPBAR */
+.topbar{background:var(--dark);padding:0 2rem;height:62px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--gold-border)}
+.topbar-logo .name{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
+.topbar-logo .sub{font-size:11px;color:rgba(255,255,255,.4)}
+.sync-pill{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:6px 14px;font-size:12px;color:rgba(255,255,255,.7)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#555;flex-shrink:0}
+.sync-dot.ok{background:#22c55e}.sync-dot.loading{background:var(--gold);animation:pulse 1s infinite}.sync-dot.error{background:#ef4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
-/* ── TOPBAR ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
-.topbar .logo{font-size:15px;font-weight:700}
-.tbadge{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700}
-.tbadge.gms{background:var(--gms-bg);color:var(--gms-text)}
-.tbadge.prestige{background:var(--prestige-bg);color:var(--prestige-text)}
-.back-btn{font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;padding:5px 8px;border-radius:var(--radius-sm)}
-.back-btn:hover{background:var(--bg)}
+/* NAV */
+.nav-wrap{background:var(--dark);border-bottom:1.5px solid var(--gold-border);padding:0 2rem}
+.nav{display:flex;max-width:1100px;margin:0 auto;overflow-x:auto}
+.nav-btn{padding:14px 18px;background:transparent;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:rgba(255,255,255,.65);transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap;margin-bottom:-1.5px}
+.nav-btn:hover{color:#fff}.nav-btn.active{color:#fff;border-bottom-color:var(--gold)}
 
-/* ── NAV TABS ── */
-.nav-tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);padding:0 18px;overflow-x:auto}
-.ntab{padding:11px 14px;font-size:13px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0}
-.ntab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text)}
+.app{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 3rem}
 
-/* ── CONTENT ── */
-.content{padding:14px 18px;flex:1}
+/* CARDS */
+.card{background:var(--white);border:1.5px solid var(--gray-light);border-radius:16px;padding:1.25rem;margin-bottom:1rem}
+.section-title{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';display:block;width:3px;height:16px;background:var(--gold);border-radius:2px}
 
-/* ── METRICS ── */
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px}
-.metric{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
-.metric .lbl{font-size:11px;color:var(--text2);margin-bottom:3px}
-.metric .val{font-size:21px;font-weight:700}
-.val.green{color:var(--green)}.val.amber{color:var(--amber)}.val.red{color:var(--red)}
+/* BUTTONS */
+.btn-primary{padding:10px 22px;background:var(--gold);color:var(--dark);border:none;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:7px;transition:all .15s}
+.btn-primary:hover{background:#d4a93a}
+.btn-secondary{padding:10px 18px;background:transparent;color:var(--dark);border:1.5px solid var(--gray-light);border-radius:10px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.btn-secondary:hover{background:var(--cream)}
+.btn-dark{padding:10px 18px;background:var(--dark);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:6px}
 
-/* ── PROGRESS ── */
-.progress{height:5px;background:var(--border);border-radius:3px;margin-bottom:14px;overflow:hidden}
-.pbar{height:100%;background:#1D9E75;border-radius:3px;transition:width .3s}
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+@media(max-width:700px){.stat-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--white);border:1.5px solid var(--gray-light);border-radius:14px;padding:1rem;text-align:center}
+.stat-card .num{font-size:24px;font-weight:700}.stat-card .lbl{font-size:11px;color:var(--gray);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+.stat-card.gold{border-color:rgba(200,168,75,.4);background:#fffbf0}.stat-card.gold .num{color:var(--gold)}
+.stat-card.green{border-color:#bbf7d0;background:#f0fdf4}.stat-card.green .num{color:#15803d}
+.stat-card.red{border-color:#fecaca;background:#fff5f5}.stat-card.red .num{color:#dc2626}
+.stat-card.amber{border-color:#fde68a;background:#fffbeb}.stat-card.amber .num{color:#b45309}
 
-/* ── PILLS / TABS ── */
-.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.pill{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);white-space:nowrap}
-.pill.active{background:var(--text);color:#fff;border-color:var(--text)}
+/* PROGRESS */
+.progress-wrap{margin-bottom:1.5rem}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:500}
+.progress-bar-bg{height:8px;background:var(--gray-light);border-radius:4px;overflow:hidden}
+.progress-bar{height:100%;background:var(--gold);border-radius:4px;transition:width .3s}
 
-/* ── FILTERS ── */
-.filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
-.filters input{flex:1;min-width:160px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--card);color:var(--text);outline:none}
-.filters input:focus{border-color:#888}
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:7px 14px;border:1.5px solid var(--gray-light);border-radius:20px;background:transparent;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s;white-space:nowrap}
+.filter-btn:hover{border-color:rgba(200,168,75,.4);color:var(--gold)}
+.filter-btn.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.search-input{padding:8px 14px;border:1.5px solid var(--gray-light);border-radius:20px;background:var(--white);color:var(--dark);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;flex:1;min-width:200px}
+.search-input:focus{border-color:rgba(200,168,75,.5)}
 
-/* ── BUTTONS ── */
-.btn{padding:8px 15px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;white-space:nowrap}
-.btn:hover{background:var(--bg)}
-.btn-gms{background:var(--gms);color:#fff;border-color:var(--gms)}
-.btn-gms:hover{opacity:.9}
-.btn-prestige{background:var(--prestige);color:#fff;border-color:var(--prestige)}
-.btn-prestige:hover{opacity:.9}
-.btn-sm{padding:4px 10px;font-size:12px}
-
-/* ── TABLE ── */
-.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:9px 11px;background:var(--bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--text2);white-space:nowrap}
-td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+thead tr{border-bottom:2px solid var(--gray-light)}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--gray-light);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafaf8}
-.code-c{font-size:11px;color:var(--text3);font-family:monospace}
-.qty-in{width:68px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;font-size:13px;background:var(--card);color:var(--text);outline:none}
-.qty-in:focus{border-color:#888}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-.b-ok{background:var(--green-bg);color:var(--green)}
-.b-warn{background:var(--amber-bg);color:var(--amber)}
-.b-err{background:var(--red-bg);color:var(--red)}
-.b-na{background:var(--bg);color:var(--text2)}
-.b-gms{background:var(--gms-bg);color:var(--gms-text)}
-.b-prestige{background:var(--prestige-bg);color:var(--prestige-text)}
-.fam-row td{background:var(--bg);font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;padding:7px 11px}
-.ep{color:var(--green);font-weight:700}.en{color:var(--red);font-weight:700}.ez{color:var(--text3)}
+tr:hover td{background:#faf9f6}
+.code-c{font-size:11px;color:var(--gray);font-family:monospace;font-weight:500}
+.qty-in{width:75px;padding:7px 9px;border:1.5px solid var(--gray-light);border-radius:8px;text-align:center;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--dark);outline:none;transition:border-color .15s}
+.qty-in:focus{border-color:rgba(200,168,75,.6)}
+.fam-row td{background:var(--cream);font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.08em;padding:7px 12px}
 
-/* ── BOTTOM BAR ── */
-.bottom-bar{display:flex;gap:8px;padding:11px 18px;background:var(--card);border-top:1px solid var(--border);position:sticky;bottom:0}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-ok{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.badge-surplus{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.badge-manque{background:#fee2e2;color:#dc2626;border:1px solid #fecaca}
+.badge-nc{background:var(--cream);color:var(--gray);border:1px solid var(--gray-light)}
+.badge-gms{background:rgba(200,168,75,.15);color:#92710a;border:1px solid var(--gold-border)}
+.badge-prestige{background:#f3e8ff;color:#7c3aed;border:1px solid #e9d5ff}
 
-/* ── UNKNOWN ARTICLES BANNER ── */
-.unknown-banner{background:#fff8e6;border:1px solid #e8c96a;border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
-.unknown-banner h3{font-size:14px;font-weight:700;color:#7a5c00;margin-bottom:10px}
-.unknown-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0dfa0;flex-wrap:wrap}
-.unknown-item:last-child{border-bottom:none}
-.unknown-item .aname{flex:1;font-size:13px;min-width:160px}
-.unknown-item .acode{font-size:11px;color:var(--text3);font-family:monospace}
+/* HOME PAGE */
+.home-hero{text-align:center;padding:3rem 1rem 2rem}
+.home-hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.home-hero p{font-size:14px;color:var(--gray)}
+.upload-zone{border:2px dashed var(--gray-light);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;background:var(--white);transition:all .15s;margin-bottom:1.5rem}
+.upload-zone:hover{border-color:rgba(200,168,75,.6);background:#fffbf0}
+.upload-zone i{font-size:36px;color:var(--gold);display:block;margin-bottom:10px}
+.upload-zone p{font-size:14px;color:var(--gray);margin-bottom:4px}
+.upload-zone small{font-size:12px;color:#bbb}
+.upload-ok{font-size:13px;color:#15803d;margin-top:8px;font-weight:500;min-height:20px;text-align:center}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem}
+@media(max-width:500px){.team-grid{grid-template-columns:1fr}}
+.team-card{background:var(--white);border:1.5px solid var(--gray-light);border-radius:16px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.team-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.team-card.gms::before{background:var(--gold)}
+.team-card.prestige::before{background:#7c3aed}
+.team-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.team-card .ico{font-size:36px;margin-bottom:12px}
+.team-card h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.team-card.gms h2{color:#92710a}
+.team-card.prestige h2{color:#7c3aed}
+.team-card p{font-size:13px;color:var(--gray)}
+.team-card .count{font-size:22px;font-weight:700;color:var(--dark);margin:6px 0 2px}
 
-/* ── CONFIG PAGE ── */
-.config-page{display:none;flex-direction:column;min-height:100vh}
-.config-content{padding:16px 18px;flex:1}
-.config-content h2{font-size:16px;font-weight:700;margin-bottom:4px}
-.config-content .sub{font-size:13px;color:var(--text2);margin-bottom:16px}
-.config-filters{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.config-filters input{flex:1;min-width:160px;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--card);color:var(--text);outline:none}
+/* CONFIG PAGE */
 .toggle-wrap{display:flex;gap:4px}
-.toggle-btn{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2)}
-.toggle-btn.gms-active{background:var(--gms);color:#fff;border-color:var(--gms)}
-.toggle-btn.prestige-active{background:var(--prestige);color:#fff;border-color:var(--prestige)}
-.saving{font-size:12px;color:var(--text3);margin-left:8px}
+.toggle-btn{padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gray-light);background:transparent;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s}
+.toggle-btn:hover{border-color:rgba(200,168,75,.4)}
+.toggle-btn.gms-on{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+.toggle-btn.prestige-on{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.saving{font-size:12px;color:var(--gray);font-style:italic}
 
-.empty{padding:2.5rem;text-align:center;color:var(--text2);font-size:14px}
+/* ECART COLORS */
+.ep{color:#15803d;font-weight:700}.en{color:#dc2626;font-weight:700}.ez{color:var(--gray)}
 
-@media(max-width:580px){
-  .team-grid{grid-template-columns:1fr}
-  td,th{padding:6px 8px;font-size:12px}
-  .qty-in{width:58px}
-  .content,.config-content{padding:10px 12px}
-  .topbar{padding:9px 12px}
-}
+/* UNKNOWN BANNER */
+.unknown-banner{background:#fffbf0;border:1.5px solid rgba(200,168,75,.5);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.unknown-banner h3{font-size:13px;font-weight:700;color:#92710a;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.unknown-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(200,168,75,.2);flex-wrap:wrap}
+.unknown-item:last-child{border-bottom:none}
+.unknown-item .aname{flex:1;font-size:13px;font-weight:500;min-width:160px}
+.unknown-item .acode{font-size:11px;color:var(--gray);font-family:monospace}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:var(--gold);padding:13px 22px;border-radius:10px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid var(--gold-border)}
+.toast.show{opacity:1}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:#bbb}
+.empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
 </style>
 </head>
 <body>
 
-<!-- ════════ HOME ════════ -->
-<div class="home" id="home">
-  <div>
-    <h1>📦 Inventaire Stock</h1>
-    <p class="sub" style="margin-top:6px">Dépôt Moorea</p>
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="name">🌿 Moorea · Inventaire</div>
+    <div class="sub">Gestion du stock GMS & Prestige</div>
   </div>
-
-  <div class="upload-box">
-    <h3>Fichier stock Excel</h3>
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-      <div class="icon">📊</div>
-      <p>Cliquez ou déposez le fichier Excel</p>
-      <small>.xlsx — fichier stock global</small>
-    </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls"/>
-    <div class="upload-ok" id="upload-ok"></div>
-  </div>
-
-  <div style="width:100%;max-width:460px">
-    <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px">Choisissez votre équipe</h3>
-    <div class="team-grid">
-      <div class="team-card gms" onclick="startSession('GMS')">
-        <div class="ico">🌿</div>
-        <h2>GMS</h2>
-        <p id="gms-count">chargement...</p>
-        <p style="margin-top:3px;font-size:11px">19h00</p>
-      </div>
-      <div class="team-card prestige" onclick="startSession('PRESTIGE')">
-        <div class="ico">✨</div>
-        <h2>Prestige</h2>
-        <p id="prestige-count">chargement...</p>
-        <p style="margin-top:3px;font-size:11px">Nuit</p>
-      </div>
-    </div>
-  </div>
-
-  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-    <span class="config-link" onclick="showConfig()">⚙️ Gérer la liste GMS / Prestige</span>
-    <span class="sync-status" id="sync-status">Connexion Firebase...</span>
+  <div class="sync-pill">
+    <span class="sync-dot loading" id="sync-dot"></span>
+    <span id="sync-label">Connexion...</span>
   </div>
 </div>
 
-<!-- ════════ APP ════════ -->
-<div style="display:none;flex-direction:column;min-height:100vh" id="app">
-  <div class="topbar">
-    <button class="back-btn" onclick="goHome()">← Accueil</button>
-    <span class="logo">Inventaire Stock</span>
-    <span class="tbadge" id="team-badge">GMS</span>
-  </div>
-  <div class="nav-tabs">
-    <div class="ntab active" id="nt-comptage" onclick="setTab('comptage')">Comptage</div>
-    <div class="ntab" id="nt-ecarts" onclick="setTab('ecarts')">Écarts</div>
-  </div>
-
-  <!-- COMPTAGE -->
-  <div id="tab-comptage" class="content">
-    <div class="metrics" id="metrics-c"></div>
-    <div class="progress"><div class="pbar" id="prog" style="width:0%"></div></div>
-    <div class="pills" id="fam-pills"></div>
-    <div class="filters">
-      <input id="srch" placeholder="Rechercher article ou code..." oninput="renderTable()"/>
-      <button class="btn" onclick="resetCounts()">Réinitialiser</button>
-    </div>
-    <!-- Nouveaux articles inconnus -->
-    <div id="unknown-banner" class="hidden"></div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th style="width:95px">Code</th><th>Article</th>
-        <th style="width:90px">Stock sys.</th>
-        <th style="width:80px">Comptage</th>
-        <th style="width:65px">Total</th>
-      </tr></thead><tbody id="tbl-body"></tbody></table>
-    </div>
-  </div>
-
-  <!-- ECARTS -->
-  <div id="tab-ecarts" class="content hidden">
-    <div class="metrics" id="metrics-e"></div>
-    <div class="pills">
-      <div class="pill active" id="ef-tous" onclick="setEF('tous')">Tous</div>
-      <div class="pill" id="ef-ecart" onclick="setEF('ecart')">Avec écart</div>
-      <div class="pill" id="ef-ok" onclick="setEF('ok')">OK</div>
-      <div class="pill" id="ef-nc" onclick="setEF('nc')">Non comptés</div>
-    </div>
-    <div class="filters">
-      <input id="srch2" placeholder="Rechercher..." oninput="renderEcarts()"/>
-      <button class="btn" onclick="exportCSV()">⬇ Exporter CSV</button>
-    </div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th style="width:95px">Code</th><th>Article</th>
-        <th style="width:90px">Stock sys.</th>
-        <th style="width:85px">Compté</th>
-        <th style="width:75px">Écart</th>
-        <th style="width:80px">Statut</th>
-      </tr></thead><tbody id="etbl-body"></tbody></table>
-    </div>
-  </div>
-
-  <div class="bottom-bar">
-    <button class="btn" id="btn-ecarts" style="flex:1" onclick="setTab('ecarts')">Voir les écarts →</button>
-    <button class="btn" id="btn-export" style="flex:1;display:none" onclick="exportCSV()">⬇ Exporter CSV</button>
+<div class="nav-wrap">
+  <div class="nav">
+    <button class="nav-btn active" id="nav-home" onclick="showPage('home')"><i class="ti ti-home"></i> Accueil</button>
+    <button class="nav-btn hidden" id="nav-comptage" onclick="showPage('comptage')"><i class="ti ti-clipboard-list"></i> Comptage</button>
+    <button class="nav-btn hidden" id="nav-ecarts" onclick="showPage('ecarts')"><i class="ti ti-chart-bar"></i> Écarts</button>
+    <button class="nav-btn" id="nav-config" onclick="showPage('config')"><i class="ti ti-settings"></i> Configuration</button>
   </div>
 </div>
 
-<!-- ════════ CONFIG ════════ -->
-<div class="config-page" id="config-page">
-  <div class="topbar">
-    <button class="back-btn" onclick="hideConfig()">← Retour</button>
-    <span class="logo">Configuration</span>
-    <span class="saving" id="saving-indicator"></span>
-  </div>
-  <div class="config-content">
-    <h2>Gestion GMS / Prestige</h2>
-    <p class="sub">Chaque article peut être basculé entre GMS et Prestige. Les changements sont synchronisés sur tous les appareils.</p>
-    <div class="config-filters">
-      <input id="cfg-srch" placeholder="Rechercher..." oninput="renderConfig()"/>
-      <div class="pills" style="margin:0">
-        <div class="pill active" id="cf-tous" onclick="setCF('tous')">Tous</div>
-        <div class="pill" id="cf-gms" onclick="setCF('GMS')">GMS</div>
-        <div class="pill" id="cf-prestige" onclick="setCF('PRESTIGE')">Prestige</div>
+<div class="app">
+
+  <!-- PAGE HOME -->
+  <div id="page-home">
+    <div class="home-hero">
+      <h1>Inventaire Stock</h1>
+      <p>Uploadez le fichier Excel puis choisissez votre équipe</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Fichier stock</div>
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <i class="ti ti-cloud-upload"></i>
+        <p>Cliquez ou déposez votre fichier Excel ici</p>
+        <small>.xlsx — fichier stock global</small>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
+      <div class="upload-ok" id="upload-ok"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><i class="ti ti-users"></i> Choisissez votre équipe</div>
+      <div class="team-grid">
+        <div class="team-card gms" onclick="startSession('GMS')">
+          <div class="ico">🌿</div>
+          <h2>GMS</h2>
+          <div class="count" id="gms-count">—</div>
+          <p>articles · 19h00</p>
+        </div>
+        <div class="team-card prestige" onclick="startSession('PRESTIGE')">
+          <div class="ico">✨</div>
+          <h2>Prestige</h2>
+          <div class="count" id="prestige-count">—</div>
+          <p>articles · Nuit</p>
+        </div>
       </div>
     </div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th style="width:95px">Code</th><th>Article</th>
-        <th style="width:110px">Famille</th>
-        <th style="width:130px">Équipe</th>
-      </tr></thead><tbody id="cfg-body"></tbody></table>
+  </div>
+
+  <!-- PAGE COMPTAGE -->
+  <div id="page-comptage" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+      <div class="section-title" style="margin:0" id="comptage-title">Comptage GMS</div>
+      <button class="btn-primary" onclick="showPage('ecarts')"><i class="ti ti-chart-bar"></i> Voir les écarts</button>
+    </div>
+
+    <div class="stat-grid" id="metrics-c"></div>
+
+    <div class="card" style="padding:.75rem 1.25rem">
+      <div class="progress-wrap" style="margin:0">
+        <div class="progress-label">
+          <span>Avancement</span>
+          <span id="prog-label">0%</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filter-bar" id="fam-pills"></div>
+      <div class="filter-bar">
+        <input class="search-input" id="srch" placeholder="🔍 Rechercher article ou code..." oninput="renderTable()"/>
+        <button class="btn-secondary" onclick="resetCounts()"><i class="ti ti-refresh"></i> Réinitialiser</button>
+      </div>
+      <div id="unknown-banner" class="hidden"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Article</th><th>Famille</th>
+            <th style="text-align:right">Stock sys.</th>
+            <th style="text-align:center">Comptage</th>
+            <th style="text-align:right">Total</th>
+          </tr></thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- PAGE ECARTS -->
+  <div id="page-ecarts" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+      <div class="section-title" style="margin:0" id="ecarts-title">Écarts GMS</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="showPage('comptage')"><i class="ti ti-arrow-left"></i> Modifier</button>
+        <button class="btn-primary" onclick="exportCSV()"><i class="ti ti-download"></i> Exporter CSV</button>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="metrics-e"></div>
+
+    <div class="card">
+      <div class="filter-bar">
+        <button class="filter-btn active" id="ef-tous" onclick="setEF('tous')">Tous</button>
+        <button class="filter-btn" id="ef-ecart" onclick="setEF('ecart')">Avec écart</button>
+        <button class="filter-btn" id="ef-ok" onclick="setEF('ok')">OK</button>
+        <button class="filter-btn" id="ef-nc" onclick="setEF('nc')">Non comptés</button>
+        <input class="search-input" id="srch2" placeholder="🔍 Rechercher..." oninput="renderEcarts()" style="max-width:240px"/>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Article</th><th>Famille</th>
+            <th style="text-align:right">Stock sys.</th>
+            <th style="text-align:right">Compté</th>
+            <th style="text-align:right">Écart</th>
+            <th>Statut</th>
+          </tr></thead>
+          <tbody id="etbl-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE CONFIG -->
+  <div id="page-config" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
+      <div class="section-title" style="margin:0">Configuration GMS / Prestige</div>
+      <span class="saving" id="saving-indicator"></span>
+    </div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Basculez chaque article entre GMS et Prestige. Les changements sont synchronisés sur tous les appareils.</p>
+
+    <div class="card">
+      <div class="filter-bar">
+        <button class="filter-btn active" id="cf-tous" onclick="setCF('tous')">Tous</button>
+        <button class="filter-btn" id="cf-gms" onclick="setCF('GMS')">GMS</button>
+        <button class="filter-btn" id="cf-prestige" onclick="setCF('PRESTIGE')">Prestige</button>
+        <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" style="max-width:240px"/>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Code</th><th>Article</th><th>Famille</th><th>Équipe</th>
+          </tr></thead>
+          <tbody id="cfg-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Firebase SDK -->
+<div class="toast" id="toast"></div>
+
+<script src="stock_data.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDETa9aJzOdVAMpDLMv8inFKZ921yiCzY8",
   authDomain: "moorea-stock.firebaseapp.com",
-  databaseURL: "https://moorea-stock-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "moorea-stock",
   storageBucket: "moorea-stock.firebasestorage.app",
   messagingSenderId: "639598259840",
@@ -302,32 +323,27 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 
-// ── STATE ──
-let allArticles = [];   // from Excel or default
-let articles = [];      // current team filtered
-let assignments = {};   // { code: 'GMS'|'PRESTIGE' } — from Firebase
+let allArticles = [];
+let articles = [];
+let assignments = {};
 let currentTeam = '';
 let famFilter = 'TOUS';
 let ecartFilter = 'tous';
 let cfFilter = 'tous';
 let saveTimeout = null;
 
-// ── FIREBASE: load assignments ──
+// ── FIREBASE ──
 async function loadAssignments() {
-  document.getElementById('sync-status').textContent = 'Synchronisation...';
+  setSyncStatus('loading', 'Connexion...');
   try {
-    const ref = doc(db, 'config', 'assignments');
-    // Live listener — updates all devices in real time
-    onSnapshot(ref, snap => {
-      if(snap.exists()) {
-        assignments = snap.data().data || {};
-      }
-      document.getElementById('sync-status').textContent = '✓ Synchronisé';
+    onSnapshot(doc(db, 'config', 'assignments'), snap => {
+      if(snap.exists()) assignments = snap.data().data || {};
+      setSyncStatus('ok', 'Synchronisé');
       updateHomeCounts();
-      if(document.getElementById('config-page').style.display === 'flex') renderConfig();
+      if(document.getElementById('page-config').style.display !== 'none') renderConfig();
     });
   } catch(e) {
-    document.getElementById('sync-status').textContent = '⚠ Hors ligne';
+    setSyncStatus('error', 'Hors ligne');
   }
 }
 
@@ -337,22 +353,33 @@ async function saveAssignments() {
     await setDoc(doc(db, 'config', 'assignments'), { data: assignments });
     document.getElementById('saving-indicator').textContent = '✓ Sauvegardé';
     setTimeout(() => document.getElementById('saving-indicator').textContent = '', 2000);
+    toast('Configuration sauvegardée');
   } catch(e) {
-    document.getElementById('saving-indicator').textContent = '⚠ Erreur sauvegarde';
+    document.getElementById('saving-indicator').textContent = '⚠ Erreur';
   }
 }
 
-function getEquipe(article) {
-  // Firebase override takes priority, otherwise use Excel column A directly
-  if(assignments[article.code] !== undefined) return assignments[article.code];
-  return article.equipe;
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + state;
+  document.getElementById('sync-label').textContent = label;
 }
 
-// ── FILE UPLOAD ──
+function getEquipe(a) {
+  return assignments[a.code] !== undefined ? assignments[a.code] : a.equipe;
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── UPLOAD ──
 const fileInput = document.getElementById('file-input');
 const dropZone = document.getElementById('drop-zone');
 fileInput.addEventListener('change', e => { if(e.target.files[0]) readFile(e.target.files[0]); });
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='#555'; });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--gold)'; });
 dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
 dropZone.addEventListener('drop', e => {
   e.preventDefault(); dropZone.style.borderColor='';
@@ -366,48 +393,43 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    allArticles = rows.map((r,i) => {
-      const colA = String(r[0]||'').toUpperCase().trim();
-      const excelEquipe = colA === 'GMS' ? 'GMS' : (colA === '' ? '' : 'PRESTIGE');
-      return {
-        id: i+1,
-        equipe: colA === 'GMS' ? 'GMS' : 'PRESTIGE',
-        _excelEquipe: excelEquipe,
-        _fromUpload: true,
-        famille: String(r[1]||''),
-        code: String(r[2]||''),
-        article: String(r[3]||''),
-        nb_colis: parseInt(r[5])||0,
-        compte: null
-      };
-    }).filter(a => a.famille);
-    document.getElementById('upload-ok').textContent = `✓ ${file.name} — ${allArticles.length} articles chargés`;
-    dropZone.style.borderColor = '#1D9E75';
-    // Auto-save all Excel attributions to Firebase (col A = source of vérité)
+    allArticles = rows.map((r,i) => ({
+      id: i+1,
+      equipe: String(r[0]||'').toUpperCase().trim()==='GMS' ? 'GMS' : 'PRESTIGE',
+      famille: String(r[1]||''),
+      code: String(r[2]||''),
+      article: String(r[3]||''),
+      nb_colis: parseInt(r[5])||0,
+      compte: null
+    })).filter(a => a.famille);
+    // Auto-save new articles to Firebase
     let changed = false;
     allArticles.forEach(a => {
-      if(assignments[a.code] === undefined) {
-        assignments[a.code] = a.equipe;
-        changed = true;
-      }
+      if(assignments[a.code] === undefined) { assignments[a.code] = a.equipe; changed = true; }
     });
     if(changed) saveAssignments();
+    document.getElementById('upload-ok').textContent = `✓ ${file.name} — ${allArticles.length} articles chargés`;
+    dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
+    toast(`${allArticles.length} articles chargés`);
   };
   reader.readAsArrayBuffer(file);
 }
 
-// Detect articles not yet in Firebase assignments AND not in Excel col A
-function detectUnknown() {
-  // Only flag articles that came from a NEW upload and have no col A marker AND no Firebase entry
-  return allArticles.filter(a =>
-    assignments[a.code] === undefined &&
-    a._fromUpload === true &&
-    a._excelEquipe === '' // truly empty col A
-  );
-}
+// ── PAGES ──
+window.showPage = function(p) {
+  ['home','comptage','ecarts','config'].forEach(id => {
+    document.getElementById('page-'+id).style.display = id===p ? 'block' : 'none';
+  });
+  ['home','comptage','ecarts','config'].forEach(id => {
+    const btn = document.getElementById('nav-'+id);
+    if(btn) btn.classList.toggle('active', id===p);
+  });
+  if(p==='ecarts') { updateMetricsE(); renderEcarts(); }
+  if(p==='comptage') { updateMetricsC(); renderTable(); }
+  if(p==='config') renderConfig();
+};
 
-// ── DEFAULT DATA ──
 window.addEventListener('load', () => {
   if(typeof STOCK_DATA !== 'undefined') {
     allArticles = STOCK_DATA.map(d => ({...d, compte: null}));
@@ -418,87 +440,35 @@ window.addEventListener('load', () => {
 function updateHomeCounts() {
   const gms = allArticles.filter(a => getEquipe(a)==='GMS').length;
   const pres = allArticles.filter(a => getEquipe(a)==='PRESTIGE').length;
-  document.getElementById('gms-count').textContent = gms + ' articles';
-  document.getElementById('prestige-count').textContent = pres + ' articles';
+  document.getElementById('gms-count').textContent = gms;
+  document.getElementById('prestige-count').textContent = pres;
 }
 
 // ── SESSION ──
 window.startSession = function(team) {
-  if(!allArticles.length) { alert('Chargez d\'abord le fichier Excel.'); return; }
+  if(!allArticles.length) { toast('Chargez d\'abord le fichier Excel'); return; }
   currentTeam = team;
   articles = allArticles.filter(a => getEquipe(a)===team).map(a => ({...a, compte: null}));
   famFilter = 'TOUS'; ecartFilter = 'tous';
-
-  document.getElementById('team-badge').textContent = team;
-  document.getElementById('team-badge').className = 'tbadge ' + team.toLowerCase();
-  document.getElementById('btn-ecarts').style.display = '';
-  document.getElementById('btn-export').style.display = 'none';
-  document.getElementById('nt-comptage').classList.add('active');
-  document.getElementById('nt-ecarts').classList.remove('active');
-  document.getElementById('tab-comptage').classList.remove('hidden');
-  document.getElementById('tab-ecarts').classList.add('hidden');
-
+  document.getElementById('comptage-title').textContent = 'Comptage ' + team;
+  document.getElementById('ecarts-title').textContent = 'Écarts ' + team;
+  document.getElementById('nav-comptage').classList.remove('hidden');
+  document.getElementById('nav-ecarts').classList.remove('hidden');
   buildFamPills();
-  updateMetricsC();
-  renderTable();
-
-  document.getElementById('home').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('app').style.flexDirection = 'column';
-};
-
-window.goHome = function() {
-  document.getElementById('home').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-};
-
-// ── UNKNOWN BANNER ──
-function renderUnknownBanner() {
-  // Only show articles added manually that have no Excel col A marker
-  const banner = document.getElementById('unknown-banner');
-  banner.classList.add('hidden');
-}
-
-window.assignUnknown = async function(code, equipe) {
-  assignments[code] = equipe;
-  await saveAssignments();
-  updateHomeCounts();
-  renderUnknownBanner();
-  // Refresh current session if active
-  if(currentTeam) {
-    articles = allArticles.filter(a => getEquipe(a)===currentTeam).map(a => ({...a, compte: null}));
-    buildFamPills(); renderTable(); updateMetricsC();
-  }
-};
-
-// ── TABS ──
-window.setTab = function(t) {
-  document.getElementById('tab-comptage').classList.toggle('hidden', t!=='comptage');
-  document.getElementById('tab-ecarts').classList.toggle('hidden', t!=='ecarts');
-  document.getElementById('nt-comptage').classList.toggle('active', t==='comptage');
-  document.getElementById('nt-ecarts').classList.toggle('active', t==='ecarts');
-  if(t==='ecarts') {
-    updateMetricsE(); renderEcarts();
-    document.getElementById('btn-ecarts').style.display='none';
-    document.getElementById('btn-export').style.display='';
-  } else {
-    updateMetricsC(); renderTable();
-    document.getElementById('btn-ecarts').style.display='';
-    document.getElementById('btn-export').style.display='none';
-  }
+  showPage('comptage');
 };
 
 // ── FAM PILLS ──
 function buildFamPills() {
   const fams = ['TOUS', ...[...new Set(articles.map(a => a.famille))].sort()];
   document.getElementById('fam-pills').innerHTML = fams.map(f =>
-    `<div class="pill${f==='TOUS'?' active':''}" onclick="window.setFam('${f.replace(/'/g,"\\'")}')">${f==='TOUS'?'Toutes':f}</div>`
+    `<button class="filter-btn${f==='TOUS'?' active':''}" onclick="window.setFam('${f.replace(/'/g,"\\'")}')">${f==='TOUS'?'Toutes':f}</button>`
   ).join('');
 }
 
 window.setFam = function(f) {
   famFilter = f;
-  document.querySelectorAll('#fam-pills .pill').forEach(el =>
+  document.querySelectorAll('#fam-pills .filter-btn').forEach(el =>
     el.classList.toggle('active', el.textContent.trim()===(f==='TOUS'?'Toutes':f))
   );
   renderTable();
@@ -519,11 +489,12 @@ function updateMetricsC() {
   const tot = articles.length, done = articles.filter(counted).length;
   const pct = tot ? Math.round(done/tot*100) : 0;
   document.getElementById('prog').style.width = pct+'%';
+  document.getElementById('prog-label').textContent = pct+'%';
   document.getElementById('metrics-c').innerHTML = `
-    <div class="metric"><div class="lbl">Total</div><div class="val">${tot}</div></div>
-    <div class="metric"><div class="lbl">Comptés</div><div class="val green">${done}</div></div>
-    <div class="metric"><div class="lbl">Restants</div><div class="val ${tot-done>0?'amber':'green'}">${tot-done}</div></div>
-    <div class="metric"><div class="lbl">Avancement</div><div class="val ${pct===100?'green':pct>50?'amber':'red'}">${pct}%</div></div>`;
+    <div class="stat-card"><div class="num">${tot}</div><div class="lbl">Total articles</div></div>
+    <div class="stat-card green"><div class="num">${done}</div><div class="lbl">Comptés</div></div>
+    <div class="stat-card amber"><div class="num">${tot-done}</div><div class="lbl">Restants</div></div>
+    <div class="stat-card gold"><div class="num">${pct}%</div><div class="lbl">Avancement</div></div>`;
 }
 
 function renderTable() {
@@ -533,18 +504,22 @@ function renderTable() {
     if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
     return true;
   });
-  if(!rows.length) { document.getElementById('tbl-body').innerHTML='<tr><td colspan="5" class="empty">Aucun article.</td></tr>'; return; }
-  let html='', lastFam='';
+  if(!rows.length) {
+    document.getElementById('tbl-body').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ti ti-search"></i>Aucun article trouvé</td></tr>';
+    return;
+  }
+  let html = '', lastFam = '';
   rows.forEach(a => {
     if(famFilter==='TOUS' && a.famille!==lastFam) {
-      html += `<tr class="fam-row"><td colspan="5">${a.famille}</td></tr>`;
+      html += `<tr class="fam-row"><td colspan="6">${a.famille}</td></tr>`;
       lastFam = a.famille;
     }
     html += `<tr>
       <td class="code-c">${a.code}</td>
-      <td>${a.article}</td>
+      <td style="font-weight:500">${a.article}</td>
+      <td style="font-size:12px;color:var(--gray)">${famFilter==='TOUS'?'':a.famille}</td>
       <td style="text-align:right;font-weight:700">${a.nb_colis}</td>
-      <td><input class="qty-in" type="number" min="0" placeholder="—" value="${counted(a)?a.compte:''}" onchange="window.setCount(${a.id},this.value)"/></td>
+      <td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="${counted(a)?a.compte:''}" onchange="window.setCount(${a.id},this.value)"/></td>
       <td style="text-align:right;font-weight:700">${counted(a)?a.compte:'—'}</td>
     </tr>`;
   });
@@ -555,12 +530,10 @@ function updateMetricsE() {
   const c=articles.filter(counted), we=c.filter(a=>ecart(a)!==0);
   const surp=c.filter(a=>ecart(a)>0), manq=c.filter(a=>ecart(a)<0), nc=articles.filter(a=>!counted(a));
   document.getElementById('metrics-e').innerHTML = `
-    <div class="metric"><div class="lbl">Comptés</div><div class="val">${c.length}/${articles.length}</div></div>
-    <div class="metric"><div class="lbl">Sans écart</div><div class="val green">${c.length-we.length}</div></div>
-    <div class="metric"><div class="lbl">Avec écart</div><div class="val ${we.length?'red':'green'}">${we.length}</div></div>
-    <div class="metric"><div class="lbl">Surplus</div><div class="val amber">${surp.length}</div></div>
-    <div class="metric"><div class="lbl">Manquants</div><div class="val red">${manq.length}</div></div>
-    <div class="metric"><div class="lbl">Non comptés</div><div class="val ${nc.length?'amber':'green'}">${nc.length}</div></div>`;
+    <div class="stat-card green"><div class="num">${c.length-we.length}</div><div class="lbl">Sans écart</div></div>
+    <div class="stat-card red"><div class="num">${we.length}</div><div class="lbl">Avec écart</div></div>
+    <div class="stat-card amber"><div class="num">${surp.length}</div><div class="lbl">Surplus</div></div>
+    <div class="stat-card red"><div class="num">${manq.length}</div><div class="lbl">Manquants</div></div>`;
 }
 
 window.setEF = function(f) {
@@ -578,19 +551,17 @@ function renderEcarts() {
     if(ecartFilter==='nc') return !counted(a);
     return true;
   });
-  if(!rows.length) { document.getElementById('etbl-body').innerHTML='<tr><td colspan="6" class="empty">Aucun article.</td></tr>'; return; }
-  let html='';
-  rows.forEach(a => {
-    if(!counted(a)) {
-      html+=`<tr><td class="code-c">${a.code}</td><td>${a.article}</td><td style="text-align:right">${a.nb_colis}</td><td style="color:var(--text3);text-align:right">—</td><td>—</td><td><span class="badge b-na">Non compté</span></td></tr>`;
-      return;
-    }
+  if(!rows.length) {
+    document.getElementById('etbl-body').innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ti ti-check"></i>Aucun article</td></tr>';
+    return;
+  }
+  document.getElementById('etbl-body').innerHTML = rows.map(a => {
+    if(!counted(a)) return `<tr><td class="code-c">${a.code}</td><td style="font-weight:500">${a.article}</td><td style="font-size:12px;color:var(--gray)">${a.famille}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;color:var(--gray)">—</td><td>—</td><td><span class="badge badge-nc">Non compté</span></td></tr>`;
     const e=ecart(a), sign=e>0?'+':'';
     const cls=e>0?'ep':e<0?'en':'ez';
-    const badge=e===0?'<span class="badge b-ok">OK</span>':e>0?'<span class="badge b-warn">Surplus</span>':'<span class="badge b-err">Manque</span>';
-    html+=`<tr><td class="code-c">${a.code}</td><td>${a.article}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;font-weight:700">${a.compte}</td><td class="${cls}" style="text-align:right;font-weight:700">${sign}${e}</td><td>${badge}</td></tr>`;
-  });
-  document.getElementById('etbl-body').innerHTML = html;
+    const badge=e===0?'<span class="badge badge-ok">OK</span>':e>0?'<span class="badge badge-surplus">Surplus</span>':'<span class="badge badge-manque">Manque</span>';
+    return `<tr><td class="code-c">${a.code}</td><td style="font-weight:500">${a.article}</td><td style="font-size:12px;color:var(--gray)">${a.famille}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;font-weight:700">${a.compte}</td><td class="${cls}" style="text-align:right">${sign}${e}</td><td>${badge}</td></tr>`;
+  }).join('');
 }
 
 window.resetCounts = function() {
@@ -611,23 +582,10 @@ window.exportCSV = function() {
   const lnk=document.createElement('a');
   lnk.href=url; lnk.download=`inventaire_${currentTeam.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`;
   lnk.click(); URL.revokeObjectURL(url);
+  toast('Export CSV téléchargé');
 };
 
-// ── CONFIG PAGE ──
-window.showConfig = function() {
-  cfFilter = 'tous';
-  document.getElementById('home').style.display = 'none';
-  document.getElementById('config-page').style.display = 'flex';
-  document.getElementById('config-page').style.flexDirection = 'column';
-  renderConfig();
-};
-
-window.hideConfig = function() {
-  document.getElementById('config-page').style.display = 'none';
-  document.getElementById('home').style.display = 'flex';
-  updateHomeCounts();
-};
-
+// ── CONFIG ──
 window.setCF = function(f) {
   cfFilter = f;
   ['tous','gms','prestige'].forEach(t => {
@@ -638,9 +596,8 @@ window.setCF = function(f) {
 };
 
 window.toggleAssignment = async function(code, current) {
-  const newVal = current === 'GMS' ? 'PRESTIGE' : 'GMS';
-  assignments[code] = newVal;
-  renderConfig();
+  assignments[code] = current==='GMS' ? 'PRESTIGE' : 'GMS';
+  renderConfig(); updateHomeCounts();
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(saveAssignments, 800);
 };
@@ -654,17 +611,20 @@ function renderConfig() {
     if(cfFilter==='PRESTIGE' && eq!=='PRESTIGE') return false;
     return true;
   });
-  if(!rows.length) { document.getElementById('cfg-body').innerHTML='<tr><td colspan="4" class="empty">Aucun article.</td></tr>'; return; }
+  if(!rows.length) {
+    document.getElementById('cfg-body').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>';
+    return;
+  }
   document.getElementById('cfg-body').innerHTML = rows.map(a => {
     const eq = getEquipe(a);
     return `<tr>
       <td class="code-c">${a.code}</td>
-      <td>${a.article}</td>
-      <td style="font-size:11px;color:var(--text2)">${a.famille}</td>
+      <td style="font-weight:500">${a.article}</td>
+      <td style="font-size:12px;color:var(--gray)">${a.famille}</td>
       <td>
         <div class="toggle-wrap">
-          <button class="toggle-btn ${eq==='GMS'?'gms-active':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">GMS</button>
-          <button class="toggle-btn ${eq==='PRESTIGE'?'prestige-active':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">Prestige</button>
+          <button class="toggle-btn${eq==='GMS'?' gms-on':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">GMS</button>
+          <button class="toggle-btn${eq==='PRESTIGE'?' prestige-on':''}" onclick="window.toggleAssignment('${a.code}','${eq}')">Prestige</button>
         </div>
       </td>
     </tr>`;
@@ -675,6 +635,5 @@ window.renderTable = renderTable;
 window.renderEcarts = renderEcarts;
 window.renderConfig = renderConfig;
 </script>
-<script src="stock_data.js"></script>
 </body>
 </html>
