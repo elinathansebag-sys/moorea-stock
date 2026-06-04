@@ -288,7 +288,7 @@ tr:hover td{background:#faf9f6}
 <script src="stock_data.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDETa9aJzOdVAMpDLMv8inFKZ921yiCzY8",
@@ -312,7 +312,9 @@ let ecartFilter = 'tous';
 let cfFilter = 'tous';
 let pendingTeam = '';
 let saveTimeout = null;
+let comptageTimeout = null;
 let undefSelections = {};
+const TODAY = new Date().toISOString().slice(0, 10); // ex: 2026-06-04
 
 // ── FIREBASE ──
 function loadAssignments() {
@@ -340,6 +342,29 @@ async function saveAssignments() {
   } catch(e) {
     document.getElementById('saving-indicator').textContent = '⚠ Erreur';
   }
+}
+
+async function saveComptages() {
+  if (!currentTeam) return;
+  const data = {};
+  articles.forEach(a => { if (a.compte !== null) data[a.code] = a.compte; });
+  try {
+    await setDoc(doc(db, 'comptages', TODAY + '_' + currentTeam), { data, team: currentTeam, date: TODAY, ts: Date.now() });
+  } catch(e) { console.error('saveComptages error', e); }
+}
+
+async function loadComptages(team) {
+  try {
+    const snap = await getDoc(doc(db, 'comptages', TODAY + '_' + team));
+    if (snap.exists()) {
+      const data = snap.data().data || {};
+      let count = 0;
+      articles.forEach(a => {
+        if (data[a.code] !== undefined) { a.compte = data[a.code]; count++; }
+      });
+      if (count > 0) toast(count + ' comptages récupérés');
+    }
+  } catch(e) { console.error('loadComptages error', e); }
 }
 
 function setSyncStatus(s, l) {
@@ -487,6 +512,10 @@ function launchSession(team) {
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.remove('hidden');
   buildFamPills();
+  loadComptages(team).then(() => {
+    updateMetricsC();
+    renderTable();
+  });
   window.showPage('comptage');
 }
 
@@ -515,6 +544,9 @@ window.setCount = function(id, val) {
   if (!a) return;
   a.compte = val === '' ? null : Math.max(0, parseFloat(val) || 0);
   updateMetricsC();
+  // Auto-save to Firebase with debounce
+  clearTimeout(comptageTimeout);
+  comptageTimeout = setTimeout(saveComptages, 1500);
 };
 
 function updateMetricsC() {
@@ -587,6 +619,7 @@ window.resetCounts = function() {
   if (!confirm('Réinitialiser tous les comptages ?')) return;
   articles.forEach(a => a.compte = null);
   updateMetricsC(); renderTable();
+  saveComptages();
 };
 
 window.exportCSV = function() {
