@@ -794,7 +794,7 @@ async function saveStockToFirebase(filename) {
       prestige: allArticles.filter(a => a.equipe === 'PRESTIGE').length,
       articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis }))
     };
-    const importId = new Date().toISOString().slice(0,16).replace('T','-').replace(':','h');
+    const importId = new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
     currentImportId = importId;
     await setDoc(doc(db, 'stocks', importId), importData);
     setSyncStatus('ok', 'Enregistré');
@@ -810,12 +810,14 @@ async function loadStockFromFirebase() {
     const stocks = [];
     snap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
     stocks.sort((a, b) => b.id.localeCompare(a.id));
+    console.log('Stocks found:', stocks.map(s => s.id));
     const latest = stocks[0];
     if (latest && latest.articles && latest.articles.length > 0) {
       allArticles = latest.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
       const isToday = latest.id.startsWith(TODAY);
       document.getElementById('upload-ok').textContent = '✓ ' + latest.filename + ' — ' + latest.articles.length + ' articles';
       dropZone.querySelector('p').textContent = latest.filename;
+      currentImportId = latest.id;
       showSyncBanner(latest, latest.id, isToday);
       updateHomeCounts();
       return true;
@@ -851,6 +853,7 @@ async function renderHistorique() {
     const stocks = [];
     stocksSnap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
     stocks.sort((a, b) => b.id.localeCompare(a.id));
+    console.log('Stocks found:', stocks.map(s => s.id));
 
     if (!stocks.length) {
       list.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i>Aucun inventaire trouvé</div>';
