@@ -195,9 +195,7 @@ tr:hover td{background:#faf9f6}
         <table>
           <thead><tr>
             <th>Article</th>
-            <th style="text-align:right">Stock sys.</th>
             <th style="text-align:center">Comptage</th>
-            <th style="text-align:right">Total</th>
           </tr></thead>
           <tbody id="tbl-body"></tbody>
         </table>
@@ -586,14 +584,11 @@ function renderTable() {
     if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
     return true;
   });
-  if (!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
+  if (!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="2" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   let html = '', lastFam = '';
   rows.forEach(a => {
-    if (famFilter === 'TOUS' && a.famille !== lastFam) {
-      html += '<tr class="fam-row"><td colspan="4">' + a.famille + '</td></tr>';
-      lastFam = a.famille;
-    }
-    html += '<tr><td style="font-weight:500">' + a.article + '</td><td style="text-align:right;font-weight:700">' + a.nb_colis + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td><td style="text-align:right;font-weight:700">' + (counted(a) ? a.compte : '—') + '</td></tr>';
+
+    html += '<tr><td style="font-weight:500">' + a.article + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td></tr>';
   });
   document.getElementById('tbl-body').innerHTML = html;
 }
