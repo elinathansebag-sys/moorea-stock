@@ -138,6 +138,22 @@ tr:hover td{background:#faf9f6}
 
 .empty-state{text-align:center;padding:3rem 1rem;color:#bbb}
 .empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
+
+
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--white);border-radius:20px;padding:2rem;max-width:620px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:.5rem}
+.undef-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-light);flex-wrap:wrap}
+.undef-row:last-child{border-bottom:none}
+.undef-info{flex:1;min-width:160px}
+.undef-name{font-size:13px;font-weight:500}
+.undef-code{font-size:11px;color:var(--gray);font-family:monospace}
+.undef-btns{display:flex;gap:6px}
+.undef-btn{padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gray-light);background:transparent;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--gray);transition:all .15s}
+.undef-btn.sel-gms{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+.undef-btn.sel-prestige{background:#7c3aed;color:#fff;border-color:#7c3aed}
 </style>
 </head>
 <body>
@@ -282,7 +298,10 @@ tr:hover td{background:#faf9f6}
       <div class="section-title" style="margin:0">Configuration GMS / Prestige</div>
       <span class="saving" id="saving-indicator"></span>
     </div>
-    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Basculez chaque article entre GMS et Prestige. Les changements sont synchronisés sur tous les appareils.</p>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1rem">Basculez chaque article entre GMS et Prestige. Les changements sont synchronisés sur tous les appareils.</p>
+    <div style="margin-bottom:1.25rem">
+      <button class="btn-secondary" onclick="window.resetFirebaseFromExcel()" style="border-color:#fecaca;color:#dc2626"><i class="ti ti-refresh"></i> Réinitialiser depuis l'Excel (corrige les erreurs)</button>
+    </div>
 
     <div class="card">
       <div class="filter-bar">
@@ -366,7 +385,12 @@ function setSyncStatus(state, label) {
 }
 
 function getEquipe(a) {
-  return assignments[a.code] !== undefined ? assignments[a.code] : a.equipe;
+  // Colonne A du fichier Excel = source de vérité principale
+  // Firebase sert uniquement pour les modifications manuelles via la page Config
+  if(a.equipe === 'GMS') return 'GMS';
+  // Article Prestige dans Excel : vérifier si basculé manuellement en GMS via Config
+  if(assignments[a.code] === 'GMS') return 'GMS';
+  return 'PRESTIGE';
 }
 
 function toast(msg) {
@@ -402,10 +426,14 @@ function readFile(file) {
       nb_colis: parseInt(r[5])||0,
       compte: null
     })).filter(a => a.famille);
-    // Auto-save new articles to Firebase
+    // Auto-save only truly new articles (not already in Firebase)
+    // Never overwrite Excel GMS with Firebase PRESTIGE
     let changed = false;
     allArticles.forEach(a => {
-      if(assignments[a.code] === undefined) { assignments[a.code] = a.equipe; changed = true; }
+      // If Excel says GMS, always correct Firebase if it's wrong
+      if(a.equipe === 'GMS' && assignments[a.code] !== 'GMS') {
+        assignments[a.code] = 'GMS'; changed = true;
+      }
     });
     if(changed) saveAssignments();
     document.getElementById('upload-ok').textContent = `✓ ${file.name} — ${allArticles.length} articles chargés`;
@@ -445,8 +473,70 @@ function updateHomeCounts() {
 }
 
 // ── SESSION ──
+let _pendingTeam = '';
+
 window.startSession = function(team) {
   if(!allArticles.length) { toast('Chargez d\'abord le fichier Excel'); return; }
+  // Check for articles not yet in Firebase assignments
+  const undefined_articles = allArticles.filter(a => assignments[a.code] === undefined);
+  if(undefined_articles.length > 0) {
+    _pendingTeam = team;
+    openUndefModal(undefined_articles);
+    return;
+  }
+  launchSession(team);
+};
+
+function openUndefModal(undef_articles) {
+  // Init each article with no selection
+  window._undefSelections = {};
+  const list = document.getElementById('undef-list');
+  list.innerHTML = undef_articles.map(a => `
+    <div class="undef-row" id="urow-${a.id}">
+      <div class="undef-info">
+        <div class="undef-name">${a.article}</div>
+        <div class="undef-code">${a.code} — ${a.famille}</div>
+      </div>
+      <div class="undef-btns">
+        <button class="undef-btn" id="ubtn-gms-${a.id}" onclick="window.selectUndef(${a.id},'${a.code}','GMS')">GMS</button>
+        <button class="undef-btn" id="ubtn-pres-${a.id}" onclick="window.selectUndef(${a.id},'${a.code}','PRESTIGE')">Prestige</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('modal-undef').classList.add('open');
+}
+
+window.selectUndef = function(id, code, equipe) {
+  window._undefSelections[code] = equipe;
+  const gmsBtn = document.getElementById('ubtn-gms-'+id);
+  const presBtn = document.getElementById('ubtn-pres-'+id);
+  gmsBtn.className = 'undef-btn' + (equipe==='GMS' ? ' sel-gms' : '');
+  presBtn.className = 'undef-btn' + (equipe==='PRESTIGE' ? ' sel-prestige' : '');
+};
+
+window.cancelUndefined = function() {
+  document.getElementById('modal-undef').classList.remove('open');
+  _pendingTeam = '';
+};
+
+window.saveUndefined = async function() {
+  const sels = window._undefSelections || {};
+  // Check all are assigned
+  const undef_articles = allArticles.filter(a => assignments[a.code] === undefined);
+  const missing = undef_articles.filter(a => !sels[a.code]);
+  if(missing.length > 0) {
+    toast('Veuillez attribuer tous les articles (' + missing.length + ' restants)');
+    return;
+  }
+  // Save to Firebase
+  Object.assign(assignments, sels);
+  await saveAssignments();
+  document.getElementById('modal-undef').classList.remove('open');
+  updateHomeCounts();
+  launchSession(_pendingTeam);
+};
+
+function launchSession(team) {
   currentTeam = team;
   articles = allArticles.filter(a => getEquipe(a)===team).map(a => ({...a, compte: null}));
   famFilter = 'TOUS'; ecartFilter = 'tous';
@@ -634,6 +724,44 @@ function renderConfig() {
 window.renderTable = renderTable;
 window.renderEcarts = renderEcarts;
 window.renderConfig = renderConfig;
+
+// Reset Firebase assignments from Excel column A (fixes wrong data)
+window.resetFirebaseFromExcel = async function() {
+  if(!allArticles.length) { toast('Chargez d'abord le fichier Excel'); return; }
+  if(!confirm('Réinitialiser toutes les attributions depuis la colonne A du fichier Excel ? Les modifications manuelles seront perdues.')) return;
+  assignments = {};
+  allArticles.forEach(a => { assignments[a.code] = a.equipe; });
+  await saveAssignments();
+  updateHomeCounts();
+  renderConfig();
+  toast('Attributions réinitialisées depuis l'Excel');
+};
 </script>
+    </div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Ces articles sont dans le stock mais ne sont pas encore assignés à GMS ou Prestige. Définissez-les avant de continuer.</p>
+    <div id="undefined-list"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="cancelUndefined()"><i class="ti ti-x"></i> Annuler</button>
+      <button class="btn-primary" onclick="saveUndefined()"><i class="ti ti-device-floppy"></i> Enregistrer et continuer</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="modal-undef">
+  <div class="modal-box">
+    <div class="modal-title">
+      <i class="ti ti-alert-triangle" style="color:var(--gold);font-size:20px"></i>
+      Articles sans attribution
+    </div>
+    <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Ces articles sont dans le stock mais ne sont pas encore assignés. Définissez-les pour continuer.</p>
+    <div id="undef-list"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:1.5rem;flex-wrap:wrap;border-top:1px solid var(--gray-light);padding-top:1.25rem">
+      <button class="btn-secondary" onclick="window.cancelUndefined()"><i class="ti ti-x"></i> Annuler</button>
+      <button class="btn-primary" id="btn-save-undef" onclick="window.saveUndefined()"><i class="ti ti-device-floppy"></i> Enregistrer et continuer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
