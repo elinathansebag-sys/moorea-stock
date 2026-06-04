@@ -173,23 +173,27 @@ tr:hover td{background:#faf9f6}
 
   <!-- HOME -->
   <div id="page-home">
-    <div class="home-hero">
+    <div class="home-hero" style="padding:2rem 1rem 1rem">
       <h1>Inventaire Stock</h1>
-      <p>Uploadez le fichier Excel puis choisissez votre équipe</p>
+      <p>Dépôt Moorea · GMS & Prestige</p>
     </div>
-    <div id="sync-banner" style="display:none;margin-bottom:1rem"></div>
+
+    <!-- UPLOAD (ordi) -->
     <div class="card">
-      <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Fichier stock</div>
+      <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Importer un fichier stock</div>
       <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
         <i class="ti ti-cloud-upload"></i>
         <p>Cliquez ou déposez le fichier Excel ici</p>
-        <small>.xlsx — fichier stock global</small>
+        <small>.xlsx — le stock sera disponible sur tous les appareils</small>
       </div>
       <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
       <div class="upload-ok" id="upload-ok"></div>
     </div>
-    <div class="card" id="team-select-card">
+
+    <!-- EQUIPE (apparait apres chargement) -->
+    <div class="card" id="team-select-card" style="display:none">
       <div class="section-title"><i class="ti ti-users"></i> Choisissez votre équipe</div>
+      <div id="stock-info-label" style="font-size:13px;color:var(--gray);margin-bottom:1rem"></div>
       <div class="team-grid">
         <div class="team-card gms" onclick="startSession('GMS')">
           <div class="ico">🌿</div>
@@ -202,6 +206,12 @@ tr:hover td{background:#faf9f6}
           <p>Nuit</p>
         </div>
       </div>
+    </div>
+
+    <!-- HISTORIQUE inline sur la home -->
+    <div class="card" style="margin-top:.5rem">
+      <div class="section-title"><i class="ti ti-history"></i> Historique des inventaires</div>
+      <div id="home-histo-list"><div class="empty-state" style="padding:1.5rem"><i class="ti ti-loader"></i>Chargement...</div></div>
     </div>
   </div>
 
@@ -472,6 +482,12 @@ function readFile(file) {
     toast(allArticles.length + ' articles chargés');
     // Save stock to Firebase so all devices can access it
     saveStockToFirebase(file.name);
+    // Show team selection card
+    const card = document.getElementById('team-select-card');
+    const lbl = document.getElementById('stock-info-label');
+    if (lbl) lbl.innerHTML = '<i class="ti ti-circle-check" style="color:#15803d;margin-right:6px"></i><span style="color:#15803d;font-weight:600">Stock importé</span> · ' + file.name + ' · ' + allArticles.length + ' articles';
+    if (card) card.style.display = 'block';
+    renderHomeHisto();
   };
   reader.readAsArrayBuffer(file);
 }
@@ -490,6 +506,7 @@ window.showPage = function(p) {
   if (p === 'comptage') { updateMetricsC(); renderTable(); }
   if (p === 'config') renderConfig();
   if (p === 'historique') renderHistorique();
+  if (p === 'home') renderHomeHisto();
 };
 
 window.addEventListener('load', async () => {
@@ -497,12 +514,52 @@ window.addEventListener('load', async () => {
     allArticles = STOCK_DATA.map(d => ({ ...d, compte: null }));
   }
   loadAssignments();
+  renderHomeHisto();
 });
 
 function updateHomeCounts() {}
 
 // ── SESSION + POPUP ──
 
+
+
+async function renderHomeHisto() {
+  const list = document.getElementById('home-histo-list');
+  if (!list) return;
+  try {
+    const stocksSnap = await getDocs(collection(db, 'stocks'));
+    const stocks = [];
+    stocksSnap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
+    stocks.sort((a, b) => b.date.localeCompare(a.date));
+    if (!stocks.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-history"></i>Aucun inventaire</div>';
+      return;
+    }
+    const comptSnap = await getDocs(collection(db, 'comptages'));
+    const comptages = {};
+    comptSnap.forEach(d => { comptages[d.id] = d.data(); });
+
+    list.innerHTML = stocks.slice(0, 10).map(s => {
+      const gmsData = comptages[s.id + '_GMS'];
+      const presData = comptages[s.id + '_PRESTIGE'];
+      const gmsDone = gmsData && gmsData.data ? Object.keys(gmsData.data).length : 0;
+      const presDone = presData && presData.data ? Object.keys(presData.data).length : 0;
+      const recompteCall = "recompterDepuis('" + s.id + "')";
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray-light);flex-wrap:wrap;gap:8px">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:600">' + s.id + '</div>' +
+          '<div style="font-size:12px;color:var(--gray)">' + s.filename + ' · ' +
+            '<span style="color:#92710a">GMS ' + gmsDone + '/' + s.gms + '</span> · ' +
+            '<span style="color:#7c3aed">Prestige ' + presDone + '/' + s.prestige + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="' + recompteCall + '"><i class="ti ti-clipboard-list"></i> Compter</button>' +
+      '</div>';
+    }).join('') + (stocks.length > 10 ? '<div style="font-size:12px;color:var(--gray);padding:8px 0;text-align:center">+ ' + (stocks.length-10) + ' autres dans Historique</div>' : '');
+  } catch(e) {
+    list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-alert-triangle"></i>Erreur</div>';
+  }
+}
 
 window.recompterDepuis = async function(dateStr) {
   try {
@@ -789,22 +846,16 @@ async function loadStockFromFirebase() {
 }
 
 function showSyncBanner(data, dateId, isToday) {
-  const banner = document.getElementById('sync-banner');
-  if (!banner) return;
+  const card = document.getElementById('team-select-card');
+  const lbl = document.getElementById('stock-info-label');
+  if (!card) return;
   const color = isToday ? '#15803d' : '#b45309';
-  const bg = isToday ? '#f0fdf4' : '#fffbeb';
-  const border = isToday ? '#bbf7d0' : '#fde68a';
   const icon = isToday ? 'ti-circle-check' : 'ti-clock';
-  const label = isToday ? 'Stock du jour disponible' : 'Stock du ' + dateId + ' (pas de stock disponible)';
-  banner.innerHTML = '<div style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
-    '<i class="ti ' + icon + '" style="font-size:18px;color:' + color + '"></i>' +
-    '<div style="flex:1">' +
-      '<div style="font-size:13px;font-weight:700;color:' + color + '">' + label + '</div>' +
-      '<div style="font-size:12px;color:var(--gray)">' + data.filename + ' · ' + data.nb + ' articles · importé le ' + data.dateLabel + '</div>' +
-    '</div>' +
-    '<button class="btn-primary" style="font-size:12px;padding:7px 14px" onclick="startFromSync()"><i class="ti ti-clipboard-list"></i> Commencer le comptage</button>' +
-  '</div>';
-  banner.style.display = 'block';
+  const label = isToday ? 'Stock du jour' : 'Stock du ' + dateId;
+  if (lbl) lbl.innerHTML = '<i class="ti ' + icon + '" style="color:' + color + ';margin-right:6px"></i>' +
+    '<span style="color:' + color + ';font-weight:600">' + label + '</span>' +
+    ' · ' + data.filename + ' · ' + data.nb + ' articles';
+  card.style.display = 'block';
 }
 
 async function renderHistorique() {
