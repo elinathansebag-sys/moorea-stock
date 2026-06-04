@@ -177,6 +177,7 @@ tr:hover td{background:#faf9f6}
       <h1>Inventaire Stock</h1>
       <p>Uploadez le fichier Excel puis choisissez votre équipe</p>
     </div>
+    <div id="sync-banner" style="display:none;margin-bottom:1rem"></div>
     <div class="card">
       <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Fichier stock</div>
       <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
@@ -187,7 +188,7 @@ tr:hover td{background:#faf9f6}
       <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
       <div class="upload-ok" id="upload-ok"></div>
     </div>
-    <div class="card">
+    <div class="card" id="team-select-card">
       <div class="section-title"><i class="ti ti-users"></i> Choisissez votre équipe</div>
       <div class="team-grid">
         <div class="team-card gms" onclick="startSession('GMS')">
@@ -501,6 +502,34 @@ window.addEventListener('load', async () => {
 function updateHomeCounts() {}
 
 // ── SESSION + POPUP ──
+
+
+window.recompterDepuis = async function(dateStr) {
+  try {
+    setSyncStatus('loading', 'Chargement...');
+    const snap = await getDoc(doc(db, 'stocks', dateStr));
+    if (snap.exists()) {
+      const data = snap.data();
+      allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
+      updateHomeCounts();
+      setSyncStatus('ok', 'Synchronise');
+      toast('Stock du ' + dateStr + ' - ' + allArticles.length + ' articles');
+      window.showPage('home');
+      setTimeout(() => {
+        document.getElementById('team-select-card').scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  } catch(e) {
+    setSyncStatus('error', 'Erreur');
+    toast('Erreur de chargement');
+  }
+};
+
+window.startFromSync = function() {
+  // Scroll to team selection
+  document.getElementById('team-select-card').scrollIntoView({ behavior: 'smooth' });
+};
+
 window.startSession = function(team) {
   if (!allArticles.length) { toast("Chargez d'abord le fichier Excel"); return; }
   // Articles pas encore confirmés = nouveaux articles jamais attribués
@@ -730,19 +759,52 @@ async function saveStockToFirebase(filename) {
 
 async function loadStockFromFirebase() {
   try {
-    const snap = await getDoc(doc(db, 'stocks', TODAY));
+    // Try today first, then last available stock
+    let snap = await getDoc(doc(db, 'stocks', TODAY));
+    if (!snap.exists()) {
+      // Look for most recent stock in last 7 days
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        snap = await getDoc(doc(db, 'stocks', dateStr));
+        if (snap.exists()) break;
+      }
+    }
     if (snap.exists()) {
       const data = snap.data();
       if (data.articles && data.articles.length > 0) {
-        allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, detruire: null }));
-        document.getElementById('upload-ok').textContent = '✓ ' + data.filename + ' — ' + allArticles.length + ' articles (synchronisé ' + data.dateLabel + ')';
+        allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
+        const isToday = snap.id === TODAY;
+        const label = isToday ? 'Stock du jour' : 'Stock du ' + snap.id;
+        document.getElementById('upload-ok').textContent = '✓ ' + data.filename + ' — ' + allArticles.length + ' articles';
         dropZone.querySelector('p').textContent = data.filename;
+        // Show sync banner
+        showSyncBanner(data, snap.id, isToday);
         updateHomeCounts();
         return true;
       }
     }
     return false;
   } catch(e) { return false; }
+}
+
+function showSyncBanner(data, dateId, isToday) {
+  const banner = document.getElementById('sync-banner');
+  if (!banner) return;
+  const color = isToday ? '#15803d' : '#b45309';
+  const bg = isToday ? '#f0fdf4' : '#fffbeb';
+  const border = isToday ? '#bbf7d0' : '#fde68a';
+  const icon = isToday ? 'ti-circle-check' : 'ti-clock';
+  const label = isToday ? 'Stock du jour disponible' : 'Stock du ' + dateId + ' (pas de stock disponible)';
+  banner.innerHTML = '<div style="background:' + bg + ';border:1.5px solid ' + border + ';border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+    '<i class="ti ' + icon + '" style="font-size:18px;color:' + color + '"></i>' +
+    '<div style="flex:1">' +
+      '<div style="font-size:13px;font-weight:700;color:' + color + '">' + label + '</div>' +
+      '<div style="font-size:12px;color:var(--gray)">' + data.filename + ' · ' + data.nb + ' articles · importé le ' + data.dateLabel + '</div>' +
+    '</div>' +
+    '<button class="btn-primary" style="font-size:12px;padding:7px 14px" onclick="startFromSync()"><i class="ti ti-clipboard-list"></i> Commencer le comptage</button>' +
+  '</div>';
+  banner.style.display = 'block';
 }
 
 async function renderHistorique() {
@@ -819,6 +881,7 @@ async function renderHistorique() {
         ).join('');
       };
 
+      const recompteCall = "recompterDepuis('" + dateStr + "')";
       return '<div class="histo-card" id="hc-' + dateStr + '">' +
         '<div class="histo-header" onclick="toggleHisto(\''+dateStr+'\')">'+
           '<div>' +
@@ -830,9 +893,10 @@ async function renderHistorique() {
               '<span style="color:#7c3aed">' + s.prestige + ' Prestige</span>' +
             '</div>' +
           '</div>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
             statBadge(gmsStats, 'GMS') +
             statBadge(presStats, 'PRESTIGE') +
+            '<button class="btn-primary" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();' + recompteCall + '"><i class="ti ti-clipboard-list"></i> Compter</button>' +
           '</div>' +
         '</div>' +
         '<div class="histo-detail" id="hd-' + dateStr + '">' +
