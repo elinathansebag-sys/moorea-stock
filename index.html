@@ -195,7 +195,7 @@ tr:hover td{background:#faf9f6}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Code</th><th>Article</th><th>Famille</th>
+            <th>Code</th><th>Article</th>
             <th style="text-align:right">Stock sys.</th>
             <th style="text-align:center">Comptage</th>
             <th style="text-align:right">Total</th>
@@ -227,7 +227,7 @@ tr:hover td{background:#faf9f6}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Code</th><th>Article</th><th>Famille</th>
+            <th>Code</th><th>Article</th>
             <th style="text-align:right">Stock sys.</th>
             <th style="text-align:right">Compté</th>
             <th style="text-align:right">Écart</th>
@@ -258,7 +258,7 @@ tr:hover td{background:#faf9f6}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Code</th><th>Article</th><th>Famille</th><th>Équipe</th></tr></thead>
+          <thead><tr><th>Code</th><th>Article</th><th>Équipe</th></tr></thead>
           <tbody id="cfg-body"></tbody>
         </table>
       </div>
@@ -404,15 +404,35 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    allArticles = rows.map((r, i) => ({
-      id: i + 1,
-      equipe: String(r[0] || '').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE',
-      famille: String(r[1] || ''),
-      code: String(r[2] || ''),
-      article: String(r[3] || ''),
-      nb_colis: parseInt(r[5]) || 0,
-      compte: null
-    })).filter(a => a.famille);
+    // Détection auto du format :
+    // Format A : col0=GMS/vide, col1=Famille, col2=Code, col3=Article, col5=NbColis
+    // Format B : col0=Famille, col1=Code, col2=Article, col4=NbColis (pas de col GMS)
+    const firstVal = String(rows[0][0] || '').toUpperCase().trim();
+    const hasGMScol = firstVal === 'GMS' || firstVal === '' ||
+      rows.slice(0,10).some(r => String(r[0]||'').toUpperCase().trim() === 'GMS');
+    allArticles = rows.map((r, i) => {
+      if (hasGMScol) {
+        return {
+          id: i + 1,
+          equipe: String(r[0] || '').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE',
+          famille: String(r[1] || ''),
+          code: String(r[2] || ''),
+          article: String(r[3] || ''),
+          nb_colis: parseInt(r[5]) || 0,
+          compte: null
+        };
+      } else {
+        return {
+          id: i + 1,
+          equipe: 'PRESTIGE',
+          famille: String(r[0] || ''),
+          code: String(r[1] || ''),
+          article: String(r[2] || ''),
+          nb_colis: parseInt(r[4]) || 0,
+          compte: null
+        };
+      }
+    }).filter(a => a.famille);
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
@@ -568,14 +588,14 @@ function renderTable() {
     if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
     return true;
   });
-  if (!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
+  if (!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="5" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   let html = '', lastFam = '';
   rows.forEach(a => {
     if (famFilter === 'TOUS' && a.famille !== lastFam) {
-      html += '<tr class="fam-row"><td colspan="6">' + a.famille + '</td></tr>';
+      html += '<tr class="fam-row"><td colspan="5">' + a.famille + '</td></tr>';
       lastFam = a.famille;
     }
-    html += '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + (famFilter === 'TOUS' ? '' : a.famille) + '</td><td style="text-align:right;font-weight:700">' + a.nb_colis + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td><td style="text-align:right;font-weight:700">' + (counted(a) ? a.compte : '—') + '</td></tr>';
+    html += '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="text-align:right;font-weight:700">' + a.nb_colis + '</td><td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + (counted(a) ? a.compte : '') + '" onchange="window.setCount(' + a.id + ',this.value)"/></td><td style="text-align:right;font-weight:700">' + (counted(a) ? a.compte : '—') + '</td></tr>';
   });
   document.getElementById('tbl-body').innerHTML = html;
 }
@@ -605,13 +625,13 @@ function renderEcarts() {
     if (ecartFilter === 'nc') return !counted(a);
     return true;
   });
-  if (!rows.length) { document.getElementById('etbl-body').innerHTML = '<tr><td colspan="7" class="empty-state"><i class="ti ti-check"></i>Aucun article</td></tr>'; return; }
+  if (!rows.length) { document.getElementById('etbl-body').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="ti ti-check"></i>Aucun article</td></tr>'; return; }
   document.getElementById('etbl-body').innerHTML = rows.map(a => {
-    if (!counted(a)) return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;color:var(--gray)">—</td><td>—</td><td><span class="badge badge-nc">Non compté</span></td></tr>';
+    if (!counted(a)) return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;color:var(--gray)">—</td><td>—</td><td><span class="badge badge-nc">Non compté</span></td></tr>';
     const e = ecart(a), sign = e > 0 ? '+' : '';
     const cls = e > 0 ? 'ep' : e < 0 ? 'en' : 'ez';
     const badge = e === 0 ? '<span class="badge badge-ok">OK</span>' : e > 0 ? '<span class="badge badge-surplus">Surplus</span>' : '<span class="badge badge-manque">Manque</span>';
-    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
+    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
   }).join('');
 }
 
@@ -664,10 +684,10 @@ function renderConfig() {
     if (cfFilter === 'PRESTIGE' && eq !== 'PRESTIGE') return false;
     return true;
   });
-  if (!rows.length) { document.getElementById('cfg-body').innerHTML = '<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
+  if (!rows.length) { document.getElementById('cfg-body').innerHTML = '<tr><td colspan="3" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   document.getElementById('cfg-body').innerHTML = rows.map(a => {
     const eq = getEquipe(a);
-    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td style="font-size:12px;color:var(--gray)">' + a.famille + '</td><td><div class="toggle-wrap"><button class="toggle-btn' + (eq === 'GMS' ? ' gms-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">GMS</button><button class="toggle-btn' + (eq === 'PRESTIGE' ? ' prestige-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">Prestige</button></div></td></tr>';
+    return '<tr><td class="code-c">' + a.code + '</td><td style="font-weight:500">' + a.article + '</td><td><div class="toggle-wrap"><button class="toggle-btn' + (eq === 'GMS' ? ' gms-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">GMS</button><button class="toggle-btn' + (eq === 'PRESTIGE' ? ' prestige-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">Prestige</button></div></td></tr>';
   }).join('');
 }
 
