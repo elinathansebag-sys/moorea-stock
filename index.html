@@ -855,7 +855,7 @@ async function renderHistorique() {
     const stocksSnap = await getDocs(collection(db, 'stocks'));
     const stocks = [];
     stocksSnap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
-    stocks.sort((a, b) => b.date.localeCompare(a.date));
+    stocks.sort((a, b) => b.id.localeCompare(a.id));
 
     if (!stocks.length) {
       list.innerHTML = '<div class="empty-state"><i class="ti ti-history"></i>Aucun inventaire trouvé</div>';
