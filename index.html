@@ -616,7 +616,7 @@ function renderEcarts() {
 }
 
 window.resetCounts = function() {
-  if (!confirm('Réinitialiser tous les comptages ?')) return;
+  if (!confirm('Reinitialiser tous les comptages ?')) return;
   articles.forEach(a => a.compte = null);
   updateMetricsC(); renderTable();
   saveComptages();
@@ -673,7 +673,7 @@ function renderConfig() {
 
 window.resetFirebaseFromExcel = async function() {
   if (!allArticles.length) { toast("Chargez d'abord le fichier Excel"); return; }
-  if (!confirm('Réinitialiser toutes les attributions depuis la colonne A du fichier Excel ?')) return;
+  if (!confirm('Reinitialiser toutes les attributions depuis la colonne A du fichier Excel ?')) return;
   assignments = {};
   confirmed = new Set();
   allArticles.forEach(a => {
