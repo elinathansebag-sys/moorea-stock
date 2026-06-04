@@ -112,6 +112,24 @@ tr:hover td{background:#faf9f6}
 .toast.show{opacity:1}
 .empty-state{text-align:center;padding:3rem 1rem;color:#bbb}
 .empty-state i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
+
+.calc-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;background:var(--gold);border:none;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 16px rgba(200,168,75,.4);z-index:300;transition:transform .15s}
+.calc-fab:hover{transform:scale(1.08)}
+.calc-fab.visible{display:flex}
+.calc-modal{display:none;position:fixed;bottom:90px;right:24px;background:var(--white);border:1.5px solid var(--gray-light);border-radius:20px;padding:1.25rem;width:240px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:400}
+.calc-modal.open{display:block}
+.calc-screen{background:var(--cream);border:1.5px solid var(--gray-light);border-radius:10px;padding:10px 14px;text-align:right;margin-bottom:10px;min-height:52px}
+.calc-screen .expr{font-size:11px;color:var(--gray);min-height:16px}
+.calc-screen .result{font-size:24px;font-weight:700;color:var(--dark)}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.calc-btn{padding:10px 0;border:1.5px solid var(--gray-light);border-radius:8px;background:var(--white);cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--dark);transition:all .12s;text-align:center}
+.calc-btn:hover{background:var(--cream);border-color:rgba(200,168,75,.4)}
+.calc-btn.op{color:var(--gold);font-weight:700}
+.calc-btn.eq{background:var(--gold);color:var(--dark);border-color:var(--gold);font-weight:700}
+.calc-btn.eq:hover{background:#d4a93a}
+.calc-btn.clear{color:#dc2626}
+.calc-btn.use{background:var(--dark);color:#fff;border-color:var(--dark);grid-column:span 4;font-size:12px}
+.calc-btn.use:hover{opacity:.85}
 </style>
 </head>
 <body>
@@ -175,7 +193,7 @@ tr:hover td{background:#faf9f6}
   <div id="page-comptage" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
       <div class="section-title" style="margin:0" id="comptage-title">Comptage</div>
-      <button class="btn-primary" onclick="showPage('ecarts')"><i class="ti ti-chart-bar"></i> Voir les écarts</button>
+
     </div>
     <div class="stat-grid" id="metrics-c"></div>
     <div class="card" style="padding:.75rem 1.25rem">
@@ -568,6 +586,12 @@ function updateMetricsC() {
     '<div class="stat-card green"><div class="num">' + done + '</div><div class="lbl">Comptés</div></div>' +
     '<div class="stat-card amber"><div class="num">' + (tot - done) + '</div><div class="lbl">Restants</div></div>' +
     '<div class="stat-card gold"><div class="num">' + pct + '%</div><div class="lbl">Avancement</div></div>';
+  // Show terminer button only when all articles are counted
+  const btnTerminer = document.getElementById('btn-terminer');
+  if (btnTerminer) {
+    if (pct === 100) btnTerminer.classList.remove('hidden');
+    else btnTerminer.classList.add('hidden');
+  }
 }
 
 function renderTable() {
@@ -620,6 +644,11 @@ function renderEcarts() {
     return '<tr><td style="font-weight:500">' + a.article + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
   }).join('');
 }
+
+window.terminerComptage = function() {
+  document.getElementById('nav-ecarts').classList.remove('hidden');
+  window.showPage('ecarts');
+};
 
 window.resetCounts = function() {
   if (!confirm('Reinitialiser tous les comptages ?')) return;
@@ -692,5 +721,119 @@ window.resetFirebaseFromExcel = async function() {
   toast('Attributions réinitialisées');
 };
 </script>
+
+<button class="calc-fab" id="calc-fab" onclick="toggleCalc()" title="Calculatrice">🧮</button>
+
+<div class="calc-modal" id="calc-modal">
+  <div class="calc-screen">
+    <div class="expr" id="calc-expr"></div>
+    <div class="result" id="calc-result">0</div>
+  </div>
+  <div class="calc-grid">
+    <button class="calc-btn clear" onclick="calcClear()">C</button>
+    <button class="calc-btn op" onclick="calcOp('±')">±</button>
+    <button class="calc-btn op" onclick="calcOp('%')">%</button>
+    <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+    <button class="calc-btn" onclick="calcNum('7')">7</button>
+    <button class="calc-btn" onclick="calcNum('8')">8</button>
+    <button class="calc-btn" onclick="calcNum('9')">9</button>
+    <button class="calc-btn op" onclick="calcOp('*')">×</button>
+    <button class="calc-btn" onclick="calcNum('4')">4</button>
+    <button class="calc-btn" onclick="calcNum('5')">5</button>
+    <button class="calc-btn" onclick="calcNum('6')">6</button>
+    <button class="calc-btn op" onclick="calcOp('-')">−</button>
+    <button class="calc-btn" onclick="calcNum('1')">1</button>
+    <button class="calc-btn" onclick="calcNum('2')">2</button>
+    <button class="calc-btn" onclick="calcNum('3')">3</button>
+    <button class="calc-btn op" onclick="calcOp('+')">+</button>
+    <button class="calc-btn" style="grid-column:span 2" onclick="calcNum('0')">0</button>
+    <button class="calc-btn" onclick="calcNum('.')">.</button>
+    <button class="calc-btn eq" onclick="calcEqual()">=</button>
+    <button class="calc-btn use" onclick="calcUse()">↑ Utiliser ce résultat</button>
+  </div>
+</div>
+
+<script>
+let calcExpr = '';
+let calcCurrent = '0';
+let calcJustEvaled = false;
+let calcLastFocused = null;
+
+function toggleCalc() {
+  const m = document.getElementById('calc-modal');
+  m.classList.toggle('open');
+}
+
+function calcNum(n) {
+  if (calcJustEvaled) { calcCurrent = ''; calcJustEvaled = false; }
+  if (n === '.' && calcCurrent.includes('.')) return;
+  if (calcCurrent === '0' && n !== '.') calcCurrent = n;
+  else calcCurrent += n;
+  document.getElementById('calc-result').textContent = calcCurrent;
+}
+
+function calcOp(op) {
+  calcJustEvaled = false;
+  if (op === '±') {
+    calcCurrent = String(parseFloat(calcCurrent) * -1);
+    document.getElementById('calc-result').textContent = calcCurrent;
+    return;
+  }
+  if (op === '%') {
+    calcCurrent = String(parseFloat(calcCurrent) / 100);
+    document.getElementById('calc-result').textContent = calcCurrent;
+    return;
+  }
+  calcExpr += calcCurrent + ' ' + op + ' ';
+  document.getElementById('calc-expr').textContent = calcExpr;
+  calcCurrent = '0';
+}
+
+function calcEqual() {
+  try {
+    const full = calcExpr + calcCurrent;
+    const res = Function('"use strict"; return (' + full + ')')();
+    const rounded = Math.round(res * 100) / 100;
+    document.getElementById('calc-expr').textContent = full + ' =';
+    document.getElementById('calc-result').textContent = rounded;
+    calcCurrent = String(rounded);
+    calcExpr = '';
+    calcJustEvaled = true;
+  } catch(e) {
+    document.getElementById('calc-result').textContent = 'Erreur';
+    calcCurrent = '0'; calcExpr = '';
+  }
+}
+
+function calcClear() {
+  calcCurrent = '0'; calcExpr = ''; calcJustEvaled = false;
+  document.getElementById('calc-result').textContent = '0';
+  document.getElementById('calc-expr').textContent = '';
+}
+
+function calcUse() {
+  // Put result into the last focused qty input
+  const val = document.getElementById('calc-result').textContent;
+  if (calcLastFocused && document.contains(calcLastFocused)) {
+    calcLastFocused.value = val;
+    calcLastFocused.dispatchEvent(new Event('change'));
+  }
+  document.getElementById('calc-modal').classList.remove('open');
+}
+
+// Track last focused qty input
+document.addEventListener('focusin', e => {
+  if (e.target.classList.contains('qty-in')) calcLastFocused = e.target;
+});
+
+// Show/hide calc fab based on current page
+const _origShowPage = window.showPage;
+window.showPage = function(p) {
+  _origShowPage(p);
+  const fab = document.getElementById('calc-fab');
+  if (fab) fab.classList.toggle('visible', p === 'comptage');
+};
+</script>
+
 </body>
 </html>
