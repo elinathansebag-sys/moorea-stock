@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventaire Stock — GMS & Prestige</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f8f6;--card:#fff;--border:#e5e5e0;--border2:#d0d0ca;
+  --text:#1a1a18;--text2:#6b6b66;--text3:#9b9b96;
+  --gms:#185FA5;--gms-bg:#E6F1FB;--gms-text:#042C53;
+  --prestige:#534AB7;--prestige-bg:#EEEDFE;--prestige-text:#26215C;
+  --green:#27500A;--green-bg:#EAF3DE;
+  --amber:#633806;--amber-bg:#FAEEDA;
+  --red:#791F1F;--red-bg:#FCEBEB;
+  --radius:10px;--radius-sm:6px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HOME */
+.home{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;gap:2rem}
+.home h1{font-size:28px;font-weight:600;text-align:center;color:var(--text)}
+.home p{color:var(--text2);font-size:15px;text-align:center;max-width:400px}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:480px}
+.team-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .15s,transform .1s}
+.team-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.team-card.gms{border-top:4px solid var(--gms)}
+.team-card.prestige{border-top:4px solid var(--prestige)}
+.team-card .icon{font-size:36px;margin-bottom:12px}
+.team-card h2{font-size:18px;font-weight:600;margin-bottom:6px}
+.team-card p{font-size:13px;color:var(--text2)}
+.team-card.gms h2{color:var(--gms)}
+.team-card.prestige h2{color:var(--prestige)}
+.upload-section{width:100%;max-width:480px}
+.upload-section h3{font-size:13px;color:var(--text2);margin-bottom:8px;text-align:center}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;background:var(--card);transition:border-color .15s}
+.upload-zone:hover{border-color:#888}
+.upload-zone p{font-size:14px;color:var(--text2);margin-top:6px}
+.upload-zone small{font-size:12px;color:var(--text3)}
+#file-input{display:none}
+.upload-status{font-size:13px;color:var(--green);margin-top:8px;text-align:center}
+
+/* APP */
+.app{display:none;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar .logo{font-size:16px;font-weight:600}
+.topbar .team-badge{padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600}
+.topbar .team-badge.gms{background:var(--gms-bg);color:var(--gms-text)}
+.topbar .team-badge.prestige{background:var(--prestige-bg);color:var(--prestige-text)}
+.back-btn{font-size:13px;color:var(--text2);cursor:pointer;border:none;background:none;padding:6px 10px;border-radius:var(--radius-sm)}
+.back-btn:hover{background:var(--bg)}
+
+.tabs-nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);padding:0 20px}
+.tab-nav{padding:12px 16px;font-size:14px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap}
+.tab-nav.active{color:var(--text);font-weight:500;border-bottom-color:var(--text)}
+
+.content{padding:16px 20px;flex:1}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.metric .lbl{font-size:11px;color:var(--text2);margin-bottom:4px}
+.metric .val{font-size:22px;font-weight:600;color:var(--text)}
+.metric .val.green{color:var(--green)}
+.metric .val.amber{color:var(--amber)}
+.metric .val.red{color:var(--red)}
+
+/* PROGRESS */
+.progress{height:6px;background:var(--border);border-radius:3px;margin-bottom:16px;overflow:hidden}
+.progress-bar{height:100%;background:#1D9E75;border-radius:3px;transition:width .3s}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.filters input{flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--card);color:var(--text);outline:none}
+.filters input:focus{border-color:#888}
+.fam-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fam-tab{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);white-space:nowrap}
+.fam-tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--card);color:var(--text);cursor:pointer;font-size:13px;white-space:nowrap}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--gms);color:#fff;border-color:var(--gms)}
+.btn-primary:hover{opacity:.9}
+.btn-prestige{background:var(--prestige);color:#fff;border-color:var(--prestige)}
+.btn-prestige:hover{opacity:.9}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);font-weight:500;color:var(--text2);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.code-cell{font-size:11px;color:var(--text3);font-family:monospace}
+.qty-in{width:70px;padding:5px 7px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;font-size:13px;background:var(--card);color:var(--text);outline:none}
+.qty-in:focus{border-color:#888}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.b-ok{background:var(--green-bg);color:var(--green)}
+.b-warn{background:var(--amber-bg);color:var(--amber)}
+.b-err{background:var(--red-bg);color:var(--red)}
+.b-na{background:var(--bg);color:var(--text2)}
+.fam-header td{background:var(--bg);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px}
+.ecart-pos{color:var(--green);font-weight:600}
+.ecart-neg{color:var(--red);font-weight:600}
+.ecart-zero{color:var(--text3)}
+
+/* ECARTS summary */
+.ecart-summary{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.ecart-summary h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)}
+.sum-row:last-child{border-bottom:none;font-weight:600}
+.bottom-bar{display:flex;gap:8px;padding:12px 20px;background:var(--card);border-top:1px solid var(--border);position:sticky;bottom:0}
+
+.empty{padding:3rem;text-align:center;color:var(--text2);font-size:14px}
+
+@media(max-width:600px){
+  .team-grid{grid-template-columns:1fr}
+  .content{padding:12px}
+  .topbar{padding:10px 14px}
+  td,th{padding:7px 8px;font-size:12px}
+  .qty-in{width:60px}
+}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="home" id="home">
+  <div>
+    <h1>📦 Inventaire Stock</h1>
+    <p style="margin-top:8px">Sélectionnez votre équipe pour commencer le comptage</p>
+  </div>
+
+  <div class="upload-section">
+    <h3>1. Uploadez le fichier stock Excel</h3>
+    <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="drop-zone">
+      <div style="font-size:32px">📊</div>
+      <p>Cliquez ou déposez votre fichier Excel ici</p>
+      <small>.xlsx accepté — fichier stock global</small>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls"/>
+    <div class="upload-status" id="upload-status"></div>
+  </div>
+
+  <div>
+    <h3 style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:12px">2. Choisissez votre équipe</h3>
+    <div class="team-grid">
+      <div class="team-card gms" onclick="startSession('GMS')">
+        <div class="icon">🌿</div>
+        <h2>GMS</h2>
+        <p id="gms-count">— articles</p>
+        <p style="margin-top:4px;font-size:12px">19h00</p>
+      </div>
+      <div class="team-card prestige" onclick="startSession('PRESTIGE')">
+        <div class="icon">✨</div>
+        <h2>Prestige</h2>
+        <p id="prestige-count">— articles</p>
+        <p style="margin-top:4px;font-size:12px">Nuit</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">← Accueil</button>
+    <span class="logo">Inventaire Stock</span>
+    <span class="team-badge" id="team-badge">GMS</span>
+  </div>
+
+  <div class="tabs-nav">
+    <div class="tab-nav active" id="tnav-comptage" onclick="setTab('comptage')">Comptage</div>
+    <div class="tab-nav" id="tnav-ecarts" onclick="setTab('ecarts')">Écarts</div>
+  </div>
+
+  <!-- COMPTAGE TAB -->
+  <div id="tab-comptage" class="content">
+    <div class="metrics" id="metrics-c"></div>
+    <div class="progress"><div class="progress-bar" id="prog" style="width:0%"></div></div>
+    <div class="fam-tabs" id="fam-tabs"></div>
+    <div class="filters">
+      <input id="srch" placeholder="Rechercher un article ou un code..." oninput="renderTable()"/>
+      <button class="btn" onclick="resetCounts()">Réinitialiser</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:100px">Code</th>
+          <th>Article</th>
+          <th style="width:80px">Famille</th>
+          <th style="width:90px">Stock sys.</th>
+          <th style="width:80px">Comptage</th>
+          <th style="width:70px">Total</th>
+        </tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ECARTS TAB -->
+  <div id="tab-ecarts" class="content" style="display:none">
+    <div class="metrics" id="metrics-e"></div>
+    <div class="fam-tabs">
+      <div class="fam-tab active" id="ef-tous" onclick="setEF('tous')">Tous</div>
+      <div class="fam-tab" id="ef-ecart" onclick="setEF('ecart')">Avec écart</div>
+      <div class="fam-tab" id="ef-ok" onclick="setEF('ok')">OK</div>
+      <div class="fam-tab" id="ef-nc" onclick="setEF('nc')">Non comptés</div>
+    </div>
+    <div class="filters">
+      <input id="srch2" placeholder="Rechercher..." oninput="renderEcarts()"/>
+      <button class="btn" onclick="exportCSV()">⬇ Exporter CSV</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:100px">Code</th>
+          <th>Article</th>
+          <th style="width:90px">Stock sys.</th>
+          <th style="width:90px">Compté</th>
+          <th style="width:80px">Écart</th>
+          <th style="width:80px">Statut</th>
+        </tr></thead>
+        <tbody id="etbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn" id="btn-ecarts" style="flex:1" onclick="setTab('ecarts')">Voir les écarts →</button>
+    <button class="btn btn-primary" id="btn-export" onclick="exportCSV()" style="display:none">⬇ Exporter</button>
+  </div>
+</div>
+
+<script src="stock_data.js"></script>
+<script>
+let allArticles = [];
+let articles = [];
+let currentTeam = '';
+let famFilter = 'TOUS';
+let ecartFilter = 'tous';
+let currentTab = 'comptage';
+
+// FILE UPLOAD
+const fileInput = document.getElementById('file-input');
+const dropZone = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', e => { if(e.target.files[0]) readFile(e.target.files[0]); });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='#555'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.borderColor=''; if(e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    if(!json.length) return alert('Fichier vide.');
+    const rows = json.slice(1).filter(r => r.some(c => c !== ''));
+    allArticles = rows.map((r,i) => ({
+      id: i+1,
+      equipe: String(r[0]).toUpperCase() === 'GMS' ? 'GMS' : 'PRESTIGE',
+      famille: String(r[1]||''),
+      code: String(r[2]||''),
+      article: String(r[3]||''),
+      nb_colis: parseInt(r[5])||0,
+      compte: null
+    })).filter(a => a.famille);
+    updateHomeCounts();
+    document.getElementById('upload-status').textContent = `✓ ${file.name} chargé — ${allArticles.length} articles`;
+    dropZone.style.borderColor = '#1D9E75';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateHomeCounts() {
+  const gms = allArticles.filter(a => a.equipe === 'GMS').length;
+  const prestige = allArticles.filter(a => a.equipe === 'PRESTIGE').length;
+  document.getElementById('gms-count').textContent = gms + ' articles';
+  document.getElementById('prestige-count').textContent = prestige + ' articles';
+}
+
+// Load default data on start
+window.addEventListener('load', () => {
+  if(typeof STOCK_DATA !== 'undefined') {
+    allArticles = STOCK_DATA.map(d => ({...d, compte: null}));
+    updateHomeCounts();
+    document.getElementById('upload-status').textContent = '✓ Stock du jour chargé — ' + allArticles.length + ' articles';
+  }
+});
+
+function startSession(team) {
+  if(!allArticles.length) return alert('Chargez d\'abord le fichier Excel.');
+  currentTeam = team;
+  articles = allArticles.filter(a => a.equipe === team).map(a => ({...a, compte: null}));
+  famFilter = 'TOUS';
+  ecartFilter = 'tous';
+  currentTab = 'comptage';
+
+  const badge = document.getElementById('team-badge');
+  badge.textContent = team;
+  badge.className = 'team-badge ' + team.toLowerCase();
+
+  const btnExport = document.getElementById('btn-export');
+  const btnEcarts = document.getElementById('btn-ecarts');
+  btnExport.style.display = 'none';
+  btnEcarts.style.display = '';
+
+  buildFamTabs();
+  setTab('comptage');
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+
+function goHome() {
+  document.getElementById('home').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function setTab(t) {
+  currentTab = t;
+  document.getElementById('tab-comptage').style.display = t==='comptage' ? 'block' : 'none';
+  document.getElementById('tab-ecarts').style.display = t==='ecarts' ? 'block' : 'none';
+  document.getElementById('tnav-comptage').classList.toggle('active', t==='comptage');
+  document.getElementById('tnav-ecarts').classList.toggle('active', t==='ecarts');
+  if(t==='ecarts') {
+    updateMetricsE();
+    renderEcarts();
+    document.getElementById('btn-ecarts').style.display = 'none';
+    document.getElementById('btn-export').style.display = '';
+  } else {
+    updateMetricsC();
+    renderTable();
+    document.getElementById('btn-ecarts').style.display = '';
+    document.getElementById('btn-export').style.display = 'none';
+  }
+}
+
+function buildFamTabs() {
+  const fams = ['TOUS', ...[...new Set(articles.map(a => a.famille))].sort()];
+  document.getElementById('fam-tabs').innerHTML = fams.map(f =>
+    `<div class="fam-tab${f==='TOUS'?' active':''}" onclick="setFam('${f.replace(/'/g,"\\'")}')">
+      ${f==='TOUS'?'Toutes':f}
+    </div>`
+  ).join('');
+}
+
+function setFam(f) {
+  famFilter = f;
+  document.querySelectorAll('#fam-tabs .fam-tab').forEach(el => {
+    el.classList.toggle('active', el.textContent.trim() === (f==='TOUS'?'Toutes':f));
+  });
+  renderTable();
+}
+
+function setCount(id, val) {
+  const a = articles.find(x => x.id === id);
+  if(!a) return;
+  a.compte = val === '' ? null : Math.max(0, parseFloat(val)||0);
+  updateMetricsC();
+}
+
+const counted = a => a.compte !== null;
+const ecart = a => a.compte - a.nb_colis;
+
+function updateMetricsC() {
+  const tot = articles.length;
+  const done = articles.filter(counted).length;
+  const pct = tot ? Math.round(done/tot*100) : 0;
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('metrics-c').innerHTML = `
+    <div class="metric"><div class="lbl">Total articles</div><div class="val">${tot}</div></div>
+    <div class="metric"><div class="lbl">Comptés</div><div class="val green">${done}</div></div>
+    <div class="metric"><div class="lbl">Restants</div><div class="val ${tot-done>0?'amber':'green'}">${tot-done}</div></div>
+    <div class="metric"><div class="lbl">Avancement</div><div class="val ${pct===100?'green':pct>50?'amber':'red'}">${pct}%</div></div>`;
+}
+
+function renderTable() {
+  const q = (document.getElementById('srch')||{value:''}).value.toLowerCase();
+  let rows = articles.filter(a => {
+    if(famFilter !== 'TOUS' && a.famille !== famFilter) return false;
+    if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if(!rows.length) { document.getElementById('tbl-body').innerHTML = '<tr><td colspan="6" class="empty">Aucun article trouvé.</td></tr>'; return; }
+  let html = '';
+  let lastFam = '';
+  rows.forEach(a => {
+    if(famFilter === 'TOUS' && a.famille !== lastFam) {
+      html += `<tr class="fam-header"><td colspan="6">${a.famille}</td></tr>`;
+      lastFam = a.famille;
+    }
+    const tot = counted(a) ? a.compte : '—';
+    html += `<tr>
+      <td class="code-cell">${a.code}</td>
+      <td>${a.article}</td>
+      <td style="font-size:11px;color:var(--text3)">${famFilter==='TOUS'?'':a.famille}</td>
+      <td style="text-align:right;font-weight:600">${a.nb_colis}</td>
+      <td><input class="qty-in" type="number" min="0" placeholder="—" value="${counted(a)?a.compte:''}" onchange="setCount(${a.id},this.value)"/></td>
+      <td style="text-align:right;font-weight:600">${tot}</td>
+    </tr>`;
+  });
+  document.getElementById('tbl-body').innerHTML = html;
+}
+
+function updateMetricsE() {
+  const c = articles.filter(counted);
+  const we = c.filter(a => ecart(a) !== 0);
+  const surp = c.filter(a => ecart(a) > 0);
+  const manq = c.filter(a => ecart(a) < 0);
+  const nc = articles.filter(a => !counted(a));
+  document.getElementById('metrics-e').innerHTML = `
+    <div class="metric"><div class="lbl">Comptés</div><div class="val">${c.length}/${articles.length}</div></div>
+    <div class="metric"><div class="lbl">Sans écart</div><div class="val green">${c.length-we.length}</div></div>
+    <div class="metric"><div class="lbl">Avec écart</div><div class="val ${we.length?'red':'green'}">${we.length}</div></div>
+    <div class="metric"><div class="lbl">Surplus</div><div class="val amber">${surp.length}</div></div>
+    <div class="metric"><div class="lbl">Manquants</div><div class="val red">${manq.length}</div></div>
+    <div class="metric"><div class="lbl">Non comptés</div><div class="val ${nc.length?'amber':'green'}">${nc.length}</div></div>`;
+}
+
+function setEF(f) {
+  ecartFilter = f;
+  ['tous','ecart','ok','nc'].forEach(t => document.getElementById('ef-'+t).classList.toggle('active', t===f));
+  renderEcarts();
+}
+
+function renderEcarts() {
+  const q = (document.getElementById('srch2')||{value:''}).value.toLowerCase();
+  let rows = articles.filter(a => {
+    if(q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+    if(ecartFilter === 'ecart') return counted(a) && ecart(a) !== 0;
+    if(ecartFilter === 'ok') return counted(a) && ecart(a) === 0;
+    if(ecartFilter === 'nc') return !counted(a);
+    return true;
+  });
+  if(!rows.length) { document.getElementById('etbl-body').innerHTML = '<tr><td colspan="6" class="empty">Aucun article.</td></tr>'; return; }
+  let html = '';
+  rows.forEach(a => {
+    if(!counted(a)) {
+      html += `<tr><td class="code-cell">${a.code}</td><td>${a.article}</td><td style="text-align:right">${a.nb_colis}</td><td style="color:var(--text3);text-align:right">—</td><td>—</td><td><span class="badge b-na">Non compté</span></td></tr>`;
+      return;
+    }
+    const e = ecart(a);
+    const sign = e > 0 ? '+' : '';
+    const cls = e > 0 ? 'ecart-pos' : e < 0 ? 'ecart-neg' : 'ecart-zero';
+    const badge = e === 0 ? '<span class="badge b-ok">OK</span>' : e > 0 ? '<span class="badge b-warn">Surplus</span>' : '<span class="badge b-err">Manque</span>';
+    html += `<tr><td class="code-cell">${a.code}</td><td>${a.article}</td><td style="text-align:right">${a.nb_colis}</td><td style="text-align:right;font-weight:600">${a.compte}</td><td class="${cls}" style="text-align:right;font-weight:600">${sign}${e}</td><td>${badge}</td></tr>`;
+  });
+  document.getElementById('etbl-body').innerHTML = html;
+}
+
+function resetCounts() {
+  if(!confirm('Réinitialiser tous les comptages ?')) return;
+  articles.forEach(a => a.compte = null);
+  updateMetricsC();
+  renderTable();
+}
+
+function exportCSV() {
+  const now = new Date().toLocaleString('fr-FR');
+  let csv = `Inventaire ${currentTeam} — ${now}\n`;
+  csv += 'Code,Article,Famille,Stock système,Compté,Écart,Statut\n';
+  articles.forEach(a => {
+    const e = counted(a) ? ecart(a) : '';
+    const st = !counted(a) ? 'Non compté' : e === 0 ? 'OK' : e > 0 ? 'Surplus' : 'Manque';
+    csv += `"${a.code}","${a.article}","${a.famille}",${a.nb_colis},${counted(a)?a.compte:''},${e},"${st}"\n`;
+  });
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `inventaire_${currentTeam.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
