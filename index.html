@@ -480,17 +480,71 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    // Détection format : si col0 contient 'GMS' ou est vide ET col1 est une famille
-    const hasGMScol = rows.slice(0, 20).some(r => String(r[0]||'').toUpperCase().trim() === 'GMS');
+    // Détection intelligente des colonnes
+    // On analyse les headers (première ligne) et le contenu pour identifier chaque colonne
+    const headers = json[0] ? json[0].map(h => String(h||'').toLowerCase().trim()) : [];
+
+    // Cherche une colonne par ses noms possibles dans les headers
+    const findCol = (keywords) => {
+      for (const kw of keywords) {
+        const i = headers.findIndex(h => h.includes(kw));
+        if (i >= 0) return i;
+      }
+      return -1;
+    };
+
+    // Détecte si une colonne contient principalement des nombres
+    const isNumericCol = (colIdx) => {
+      const vals = rows.slice(0,20).map(r => r[colIdx]).filter(v => v !== '' && v !== null && v !== undefined);
+      if (!vals.length) return false;
+      return vals.filter(v => !isNaN(parseFloat(v))).length / vals.length > 0.7;
+    };
+
+    // Détecte si une colonne contient GMS/vide (colonne équipe)
+    const isEquipeCol = (colIdx) => {
+      const vals = rows.slice(0,20).map(r => String(r[colIdx]||'').toUpperCase().trim());
+      return vals.some(v => v === 'GMS');
+    };
+
+    // Trouve les colonnes par header d'abord
+    let colEquipe = findCol(['gms', 'equipe', 'équipe', 'team']);
+    let colFamille = findCol(['famille', 'family', 'categ', 'rayon', 'type']);
+    let colCode = findCol(['code', 'ref', 'sku', 'id article', 'code article']);
+    let colArticle = findCol(['article', 'designation', 'désignation', 'libelle', 'libellé', 'nom', 'produit', 'description']);
+    let colQty = findCol(['nb colis', 'quantit', 'qté', 'qty', 'stock', 'colis', 'nb']);
+
+    // Si pas trouvé par header, détecte par contenu
+    if (colEquipe < 0) {
+      for (let i = 0; i < (headers.length || 6); i++) {
+        if (isEquipeCol(i)) { colEquipe = i; break; }
+      }
+    }
+
+    // Fallback : si toujours pas trouvé, utilise la logique positionnelle
+    const ncols = rows[0] ? rows[0].length : 6;
+    if (colEquipe < 0 && ncols >= 4) colEquipe = -1; // pas de col équipe
+    if (colFamille < 0) colFamille = colEquipe >= 0 ? colEquipe + 1 : 0;
+    if (colCode < 0) colCode = colFamille + 1;
+    if (colArticle < 0) colArticle = colCode + 1;
+    if (colQty < 0) {
+      // Cherche la première colonne numérique après colArticle
+      for (let i = colArticle + 1; i < ncols; i++) {
+        if (isNumericCol(i)) { colQty = i; break; }
+      }
+      if (colQty < 0) colQty = colArticle + 1;
+    }
+
+    console.log('Colonnes détectées:', {colEquipe, colFamille, colCode, colArticle, colQty});
+
     allArticles = rows.map((r, i) => ({
       id: i + 1,
-      equipe: hasGMScol ? (String(r[0]||'').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE') : 'PRESTIGE',
-      famille: hasGMScol ? String(r[1]||'') : String(r[0]||''),
-      code: hasGMScol ? String(r[2]||'') : String(r[1]||''),
-      article: hasGMScol ? String(r[3]||'') : String(r[2]||''),
-      nb_colis: hasGMScol ? (parseInt(r[5])||0) : (parseInt(r[4])||0),
+      equipe: colEquipe >= 0 ? (String(r[colEquipe]||'').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE') : 'PRESTIGE',
+      famille: String(r[colFamille]||''),
+      code: String(r[colCode]||''),
+      article: String(r[colArticle]||''),
+      nb_colis: parseInt(r[colQty]) || 0,
       compte: null, compte1: null, compte2: null, compte3: null, detruire: null
-    })).filter(a => a.famille && a.article);
+    })).filter(a => a.article && a.article.length > 1);
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
