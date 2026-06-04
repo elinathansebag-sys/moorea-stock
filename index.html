@@ -654,28 +654,18 @@ function renderTable() {
     const t1 = parseFloat(q1)||0, t2 = parseFloat(q2)||0, t3 = parseFloat(q3)||0;
     const tot = t1 + t2 + t3;
     const showTot = q1 !== '';
-    // Build inputs using array join to avoid quote issues
-    const inp = [];
-    inp.push('<input class=qty-in type=number min=0 value=' + (q1||'') + ' onchange="window.setCount(' + a.id + ',1,this.value)">');
+    const mkInput = (loc, val) => '<input class="qty-in" type="number" min="0" value="' + val + '" onchange="window.setCount(' + a.id + ',' + loc + ',this.value)">';
+    const mkPlus = (loc) => '<button class="add-loc-btn" onclick="window.addLoc(' + a.id + ',' + loc + ')">+</button>';
+    let inp = mkInput(1, q1);
     if (q1 !== '') {
-      if (q2 === '') {
-        inp.push('<button class=add-loc-btn onclick="window.addLoc(' + a.id + ',2)">+</button>');
-      } else {
-        inp.push('<input class=qty-in type=number min=0 value=' + (q2||'') + ' onchange="window.setCount(' + a.id + ',2,this.value)">');
-        if (q3 === '') {
-          inp.push('<button class=add-loc-btn onclick="window.addLoc(' + a.id + ',3)">+</button>');
-        } else {
-          inp.push('<input class=qty-in type=number min=0 value=' + (q3||'') + ' onchange="window.setCount(' + a.id + ',3,this.value)">');
-        }
-      }
+      inp += (q2 === '') ? mkPlus(2) : mkInput(2, q2) + ((q3 === '') ? mkPlus(3) : mkInput(3, q3));
     }
-    const inputs = inp.join('');
-    html += '<tr><td style="font-weight:500">' + a.article + '</td>' +
-      '<td style="text-align:center">' +
-        '<div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">' + inputs + '</div>' +
-      '</td>' +
-      '<td style=text-align:center><input class=qty-in-destroy type=number min=0 placeholder=0 value=' + (qd||'') + ' onchange="window.setCount(' + a.id + ',4,this.value)"></td>' +
-      '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '—') + '</td>' +
+    const destroyInput = '<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="' + qd + '" onchange="window.setCount(' + a.id + ',4,this.value)">';
+    html += '<tr>' +
+      '<td style="font-weight:500">' + a.article + '</td>' +
+      '<td style="text-align:center"><div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">' + inp + '</div></td>' +
+      '<td style="text-align:center">' + destroyInput + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '-') + '</td>' +
       '</tr>';
   });
   document.getElementById('tbl-body').innerHTML = html;
@@ -830,7 +820,7 @@ async function renderHistorique() {
       };
 
       return '<div class="histo-card" id="hc-' + dateStr + '">' +
-        '<div class="histo-header" onclick="toggleHisto('' + dateStr + '')">' +
+        '<div class="histo-header" onclick="toggleHisto(\''+dateStr+'\')">'+
           '<div>' +
             '<div class="histo-date">📅 ' + (s.dateLabel || dateStr) + '</div>' +
             '<div class="histo-meta">' +
