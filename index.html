@@ -144,6 +144,14 @@ tr:hover td{background:#faf9f6}
 .histo-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
 .histo-ecart-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-light);font-size:13px}
 .histo-ecart-row:last-child{border-bottom:none}
+
+.add-article-bar{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-light);flex-wrap:wrap;align-items:center}
+.add-article-search{flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:13px;font-family:inherit;background:var(--white);color:var(--dark);outline:none}
+.add-article-search:focus{border-color:rgba(200,168,75,.5)}
+.add-article-suggestions{position:absolute;top:100%;left:0;right:0;background:var(--white);border:1.5px solid rgba(200,168,75,.4);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:200;max-height:220px;overflow-y:auto;margin-top:3px}
+.add-article-sugg-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--gray-light);display:flex;justify-content:space-between;align-items:center}
+.add-article-sugg-item:hover{background:var(--cream)}
+.add-article-sugg-item:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -238,6 +246,15 @@ tr:hover td{background:#faf9f6}
           </tr></thead>
           <tbody id="tbl-body"></tbody>
         </table>
+      </div>
+      <div class="add-article-bar">
+        <i class="ti ti-plus" style="color:var(--gold);font-size:16px;flex-shrink:0"></i>
+        <div style="flex:1;position:relative">
+          <input class="add-article-search" id="add-article-input" placeholder="Ajouter un article non listé — recherche dans l'historique..." oninput="searchAddArticle(this.value)" autocomplete="off"/>
+          <div id="add-article-suggestions" class="add-article-suggestions" style="display:none"></div>
+        </div>
+        <input type="number" id="add-article-qty" min="0" placeholder="Qté" style="width:70px;padding:8px;border:1.5px solid var(--gray-light);border-radius:8px;font-size:13px;font-family:inherit;text-align:center;outline:none"/>
+        <button class="btn-primary" style="padding:8px 14px;font-size:13px" onclick="addArticleManuel()"><i class="ti ti-plus"></i> Ajouter</button>
       </div>
     </div>
   </div>
@@ -394,7 +411,7 @@ async function saveComptages() {
   const data = {};
   articles.forEach(a => {
     if (a.compte !== null && a.compte !== undefined) {
-      data[a.code] = { c: a.compte, c1: a.compte1 ?? null, c2: a.compte2 ?? null, c3: a.compte3 ?? null, cd: a.detruire ?? null };
+      const locs={}; for(let i=1;i<=8;i++){if(a['compte'+i]!==null&&a['compte'+i]!==undefined)locs['c'+i]=a['compte'+i];} data[a.code] = { c: a.compte, ...locs, cd: a.detruire ?? null };
     }
   });
   try {
@@ -412,7 +429,7 @@ async function loadComptages(team) {
         if (data[a.code] !== undefined) {
           const d = data[a.code];
           if (typeof d === 'object' && d !== null) {
-            a.compte1 = d.c1; a.compte2 = d.c2; a.compte3 = d.c3 ?? null; a.detruire = d.cd ?? null; a.compte = d.c;
+            for(let i=1;i<=8;i++){a['compte'+i]=d['c'+i]??null;} a.detruire = d.cd ?? null; a.compte = d.c;
           } else {
             a.compte = d; a.compte1 = d; a.compte2 = null;
           }
@@ -637,8 +654,7 @@ const ecart = a => a.compte - a.nb_colis;
 window.addLoc = function(id, loc) {
   const a = articles.find(x => x.id === id);
   if (!a) return;
-  if (loc === 2) a.compte2 = 0;
-  if (loc === 3) a.compte3 = 0;
+  a['compte' + loc] = 0;
   renderTable();
 };
 
@@ -646,15 +662,20 @@ window.setCount = function(id, loc, val) {
   const a = articles.find(x => x.id === id);
   if (!a) return;
   const v = val === '' ? null : Math.max(0, parseFloat(val) || 0);
-  if (loc === 1) a.compte1 = v;
-  else if (loc === 2) a.compte2 = v;
-  else if (loc === 3) a.compte3 = v;
-  else a.detruire = v;
-  const t1 = a.compte1 ?? 0;
-  const t2 = a.compte2 ?? 0;
-  const t3 = a.compte3 ?? 0;
+  if (loc <= 8) {
+    const key = 'compte' + loc;
+    a[key] = v;
+  } else {
+    a.detruire = v;
+  }
   const hasCount = a.compte1 !== null && a.compte1 !== undefined;
-  a.compte = hasCount ? t1 + t2 + t3 : null;
+  if (hasCount) {
+    let total = 0;
+    for (let i = 1; i <= 8; i++) { total += a['compte' + i] ?? 0; }
+    a.compte = total;
+  } else {
+    a.compte = null;
+  }
   updateMetricsC();
   renderTable();
   clearTimeout(comptageTimeout);
@@ -686,21 +707,29 @@ function renderTable() {
   rows.forEach(a => {
 
     const q1 = a.compte1 !== undefined && a.compte1 !== null ? a.compte1 : '';
-    const q2 = a.compte2 !== undefined && a.compte2 !== null ? a.compte2 : '';
-    const q3 = a.compte3 !== undefined && a.compte3 !== null ? a.compte3 : '';
     const qd = a.detruire !== undefined && a.detruire !== null ? a.detruire : '';
-    const t1 = parseFloat(q1)||0, t2 = parseFloat(q2)||0, t3 = parseFloat(q3)||0;
-    const tot = t1 + t2 + t3;
+    let tot = 0;
+    for (let i = 1; i <= 8; i++) { tot += parseFloat(a['compte' + i] ?? 0) || 0; }
     const showTot = q1 !== '';
     const mkInput = (loc, val) => '<input class="qty-in" type="number" min="0" value="' + val + '" onchange="window.setCount(' + a.id + ',' + loc + ',this.value)">';
     const mkPlus = (loc) => '<button class="add-loc-btn" onclick="window.addLoc(' + a.id + ',' + loc + ')">+</button>';
-    let inp = mkInput(1, q1);
-    if (q1 !== '') {
-      inp += (q2 === '') ? mkPlus(2) : mkInput(2, q2) + ((q3 === '') ? mkPlus(3) : mkInput(3, q3));
-    }
+    // Build inputs for all filled locations + one + button at end
+    const locs = [a.compte1, a.compte2, a.compte3, a.compte4, a.compte5, a.compte6, a.compte7, a.compte8];
+    let inp = '';
+    let lastFilledLoc = 0;
+    locs.forEach((v, i) => {
+      const loc = i + 1;
+      const val = v !== null && v !== undefined ? v : '';
+      if (loc === 1) { inp += mkInput(1, val); lastFilledLoc = 1; }
+      else if (val !== '') { inp += mkInput(loc, val); lastFilledLoc = loc; }
+    });
+    // Add + button after last filled location (if q1 filled and next loc is empty)
+    if (q1 !== '' && lastFilledLoc < 8) inp += mkPlus(lastFilledLoc + 1);
     const destroyInput = '<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="' + qd + '" onchange="window.setCount(' + a.id + ',4,this.value)">';
+    const otherTeam = currentTeam === 'GMS' ? 'Prestige' : 'GMS';
+    const moveBtn = '<button onclick="window.moveToOther(' + a.id + ')" title="Passer en ' + otherTeam + '" style="padding:3px 8px;border:1px solid var(--gray-light);border-radius:6px;background:transparent;color:var(--gray);cursor:pointer;font-size:11px;white-space:nowrap">' + otherTeam + ' →</button>';
     html += '<tr>' +
-      '<td style="font-weight:500">' + a.article + '</td>' +
+      '<td style="font-weight:500">' + a.article + '<br><span style="margin-top:4px;display:inline-block">' + moveBtn + '</span></td>' +
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap">' + inp + '</div></td>' +
       '<td style="text-align:center">' + destroyInput + '</td>' +
       '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '-') + '</td>' +
@@ -1011,9 +1040,146 @@ window.exportPDF = function() {
   setTimeout(() => win.print(), 500);
 };
 
+
+
+let histoArticlesCache = [];
+
+async function loadHistoArticles() {
+  if (histoArticlesCache.length) return histoArticlesCache;
+  try {
+    const snap = await getDocs(collection(db, 'stocks'));
+    const seen = new Set();
+    snap.forEach(d => {
+      const data = d.data();
+      (data.articles || []).forEach(a => {
+        if (!seen.has(a.code)) {
+          seen.add(a.code);
+          histoArticlesCache.push(a);
+        }
+      });
+    });
+  } catch(e) {}
+  return histoArticlesCache;
+}
+
+window.searchAddArticle = async function(val) {
+  const box = document.getElementById('add-article-suggestions');
+  if (!val || val.length < 2) { box.style.display = 'none'; return; }
+  const q = val.toLowerCase();
+  const all = await loadHistoArticles();
+  // Smart search: score by match position + article name
+  const scored = all
+    .filter(a => !articles.find(x => x.code === a.code)) // exclude already in list
+    .map(a => {
+      const name = a.article.toLowerCase();
+      const score = name.startsWith(q) ? 3 : name.includes(' ' + q) ? 2 : name.includes(q) ? 1 : 0;
+      return { ...a, score };
+    })
+    .filter(a => a.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+
+  if (!scored.length) {
+    box.innerHTML = '<div class="add-article-sugg-item" style="color:var(--gray)"><span>Aucun résultat — sera créé comme nouvel article</span></div>';
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = scored.map(a =>
+    '<div class="add-article-sugg-item" onclick="window.selectAddArticle(' + JSON.stringify(a).replace(/"/g, '&quot;') + ')">' +
+      '<span>' + a.article + '</span>' +
+      '<span style="font-size:11px;color:var(--gray)">' + a.famille + '</span>' +
+    '</div>'
+  ).join('');
+  box.style.display = 'block';
+};
+
+window.selectAddArticle = function(a) {
+  document.getElementById('add-article-input').value = a.article;
+  document.getElementById('add-article-input').dataset.selected = JSON.stringify(a);
+  document.getElementById('add-article-suggestions').style.display = 'none';
+  document.getElementById('add-article-qty').focus();
+};
+
+window.addArticleManuel = function() {
+  const input = document.getElementById('add-article-input');
+  const qtyInput = document.getElementById('add-article-qty');
+  const val = input.value.trim();
+  const qty = parseFloat(qtyInput.value) || 0;
+  if (!val) { toast('Entrez le nom de l\'article'); return; }
+
+  let newArticle;
+  const selected = input.dataset.selected;
+  if (selected) {
+    const base = JSON.parse(selected);
+    newArticle = {
+      id: Date.now(),
+      equipe: currentTeam,
+      famille: base.famille || 'AUTRE',
+      code: base.code || 'EXTRA-' + Date.now(),
+      article: base.article,
+      nb_colis: 0, // not in stock = 0
+      compte: qty,
+      compte1: qty,
+      compte2: null,
+      compte3: null,
+      detruire: null,
+      _extra: true
+    };
+  } else {
+    newArticle = {
+      id: Date.now(),
+      equipe: currentTeam,
+      famille: 'AUTRE',
+      code: 'EXTRA-' + Date.now(),
+      article: val,
+      nb_colis: 0,
+      compte: qty,
+      compte1: qty,
+      compte2: null,
+      compte3: null,
+      detruire: null,
+      _extra: true
+    };
+  }
+
+  articles.push(newArticle);
+  input.value = '';
+  input.dataset.selected = '';
+  qtyInput.value = '';
+  updateMetricsC();
+  renderTable();
+  clearTimeout(comptageTimeout);
+  comptageTimeout = setTimeout(saveComptages, 1500);
+  toast(newArticle.article + ' ajouté (excédent)');
+};
+
+// Close suggestions on click outside
+document.addEventListener('click', e => {
+  const box = document.getElementById('add-article-suggestions');
+  const input = document.getElementById('add-article-input');
+  if (box && input && !box.contains(e.target) && e.target !== input) {
+    box.style.display = 'none';
+  }
+});
+
+window.moveToOther = async function(id) {
+  const a = articles.find(x => x.id === id);
+  if (!a) return;
+  const newTeam = currentTeam === 'GMS' ? 'PRESTIGE' : 'GMS';
+  assignments[a.code] = newTeam;
+  confirmed.add(a.code);
+  // Remove from current list
+  articles = articles.filter(x => x.id !== id);
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(saveAssignments, 800);
+  updateMetricsC();
+  renderTable();
+  toast(a.article + ' déplacé vers ' + newTeam);
+};
+
 window.resetCounts = function() {
   if (!confirm('Reinitialiser tous les comptages ?')) return;
-  articles.forEach(a => { a.compte = null; a.compte1 = null; a.compte2 = null; a.compte3 = null; a.detruire = null; });
+  articles.forEach(a => { a.compte = null; for(let i=1;i<=8;i++) a['compte'+i]=null; a.detruire = null; });
   updateMetricsC(); renderTable();
   saveComptages();
 };
