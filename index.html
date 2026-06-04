@@ -378,6 +378,7 @@ let saveTimeout = null;
 let comptageTimeout = null;
 let undefSelections = {};
 const TODAY = new Date().toISOString().slice(0, 10); // ex: 2026-06-04
+let currentImportId = TODAY; // tracks which stock import is being counted
 
 // ── FIREBASE ──
 function loadAssignments() {
@@ -416,13 +417,13 @@ async function saveComptages() {
     }
   });
   try {
-    await setDoc(doc(db, 'comptages', TODAY + '_' + currentTeam), { data, team: currentTeam, date: TODAY, ts: Date.now() });
+    await setDoc(doc(db, 'comptages', currentImportId + '_' + currentTeam), { data, team: currentTeam, date: TODAY, ts: Date.now() });
   } catch(e) { console.error('saveComptages error', e); }
 }
 
 async function loadComptages(team) {
   try {
-    const snap = await getDoc(doc(db, 'comptages', TODAY + '_' + team));
+    const snap = await getDoc(doc(db, 'comptages', currentImportId + '_' + team));
     if (snap.exists()) {
       const data = snap.data().data || {};
       let count = 0;
@@ -542,6 +543,7 @@ window.recompterDepuis = async function(dateStr) {
     if (snap.exists()) {
       const data = snap.data();
       allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
+      currentImportId = dateStr;
       updateHomeCounts();
       setSyncStatus('ok', 'Synchronise');
       showTeamCard(data.filename, allArticles.length, dateStr, dateStr === TODAY);
@@ -792,7 +794,9 @@ async function saveStockToFirebase(filename) {
       prestige: allArticles.filter(a => a.equipe === 'PRESTIGE').length,
       articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis }))
     };
-    await setDoc(doc(db, 'stocks', TODAY), importData);
+    const importId = new Date().toISOString().slice(0,16).replace('T','-').replace(':','h');
+    currentImportId = importId;
+    await setDoc(doc(db, 'stocks', importId), importData);
     setSyncStatus('ok', 'Enregistré');
     toast('Stock enregistré et disponible sur tous les appareils');
   } catch(e) { console.error('saveStock error', e); }
@@ -800,30 +804,21 @@ async function saveStockToFirebase(filename) {
 
 async function loadStockFromFirebase() {
   try {
-    // Try today first, then last available stock
-    let snap = await getDoc(doc(db, 'stocks', TODAY));
-    if (!snap.exists()) {
-      // Look for most recent stock in last 7 days
-      for (let i = 1; i <= 7; i++) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().slice(0, 10);
-        snap = await getDoc(doc(db, 'stocks', dateStr));
-        if (snap.exists()) break;
-      }
-    }
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.articles && data.articles.length > 0) {
-        allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
-        const isToday = snap.id === TODAY;
-        const label = isToday ? 'Stock du jour' : 'Stock du ' + snap.id;
-        document.getElementById('upload-ok').textContent = '✓ ' + data.filename + ' — ' + allArticles.length + ' articles';
-        dropZone.querySelector('p').textContent = data.filename;
-        // Show sync banner
-        showSyncBanner(data, snap.id, isToday);
-        updateHomeCounts();
-        return true;
-      }
+    // Get all stocks and pick the most recent
+    const snap = await getDocs(collection(db, 'stocks'));
+    if (snap.empty) return false;
+    const stocks = [];
+    snap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
+    stocks.sort((a, b) => b.id.localeCompare(a.id));
+    const latest = stocks[0];
+    if (latest && latest.articles && latest.articles.length > 0) {
+      allArticles = latest.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
+      const isToday = latest.id.startsWith(TODAY);
+      document.getElementById('upload-ok').textContent = '✓ ' + latest.filename + ' — ' + latest.articles.length + ' articles';
+      dropZone.querySelector('p').textContent = latest.filename;
+      showSyncBanner(latest, latest.id, isToday);
+      updateHomeCounts();
+      return true;
     }
     return false;
   } catch(e) { return false; }
@@ -871,6 +866,7 @@ async function renderHistorique() {
       const dateStr = s.id;
       const gmsKey = dateStr + '_GMS';
       const presKey = dateStr + '_PRESTIGE';
+      // Also check without time suffix for older entries
       const gmsData = comptages[gmsKey];
       const presData = comptages[presKey];
 
