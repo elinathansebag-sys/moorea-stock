@@ -160,14 +160,12 @@ tr:hover td{background:#faf9f6}
         <div class="team-card gms" onclick="startSession('GMS')">
           <div class="ico">🌿</div>
           <h2>GMS</h2>
-          <div class="count" id="gms-count">—</div>
-          <p>articles · 19h00</p>
+          <p>19h00</p>
         </div>
         <div class="team-card prestige" onclick="startSession('PRESTIGE')">
           <div class="ico">✨</div>
           <h2>Prestige</h2>
-          <div class="count" id="prestige-count">—</div>
-          <p>articles · Nuit</p>
+          <p>Nuit</p>
         </div>
       </div>
     </div>
@@ -457,12 +455,7 @@ window.addEventListener('load', () => {
   loadAssignments();
 });
 
-function updateHomeCounts() {
-  const gms = allArticles.filter(a => getEquipe(a) === 'GMS').length;
-  const pres = allArticles.filter(a => getEquipe(a) === 'PRESTIGE').length;
-  document.getElementById('gms-count').textContent = gms;
-  document.getElementById('prestige-count').textContent = pres;
-}
+function updateHomeCounts() {}
 
 // ── SESSION + POPUP ──
 window.startSession = function(team) {
