@@ -211,8 +211,7 @@ tr:hover td{background:#faf9f6}
         <table>
           <thead><tr>
             <th>Article</th>
-            <th style="text-align:center">Empl. 1</th>
-            <th style="text-align:center">Empl. 2</th>
+            <th style="text-align:center">Comptage</th>
             <th style="text-align:center;color:#dc2626">Détruire</th>
             <th style="text-align:center">Total</th>
           </tr></thead>
@@ -584,6 +583,22 @@ window.setFam = function(f) {
 const counted = a => a.compte !== null && a.compte !== undefined;
 const ecart = a => a.compte - a.nb_colis;
 
+window.toggleSecond = function(id) {
+  const a = articles.find(x => x.id === id);
+  if (!a) return;
+  if (a.compte2 !== null && a.compte2 !== undefined) {
+    // Remove second location
+    a.compte2 = null;
+    const t1 = a.compte1 ?? 0;
+    a.compte = a.compte1 !== null ? t1 : null;
+  } else {
+    a.compte2 = 0;
+  }
+  clearTimeout(comptageTimeout);
+  comptageTimeout = setTimeout(saveComptages, 1500);
+  renderTable();
+};
+
 window.setCount = function(id, loc, val) {
   const a = articles.find(x => x.id === id);
   if (!a) return;
@@ -635,13 +650,19 @@ function renderTable() {
     const q1 = a.compte1 !== undefined && a.compte1 !== null ? a.compte1 : '';
     const q2 = a.compte2 !== undefined && a.compte2 !== null ? a.compte2 : '';
     const qd = a.detruire !== undefined && a.detruire !== null ? a.detruire : '';
-    const t1 = parseFloat(q1)||0, t2 = parseFloat(q2)||0, td = parseFloat(qd)||0;
+    const t1 = parseFloat(q1)||0, t2 = parseFloat(q2)||0;
     const tot = t1 + t2;
-    const showTot = q1 !== '' || q2 !== '';
+    const showTot = q1 !== '';
+    const showSecond = q1 !== '';
     html += '<tr><td style="font-weight:500">' + a.article + '</td>' +
-      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + q1 + '" onchange="window.setCount(' + a.id + ',1,this.value)"/></td>' +
-      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="—" value="' + q2 + '" onchange="window.setCount(' + a.id + ',2,this.value)"/></td>' +
-      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="0" value="' + qd + '" style="border-color:#fecaca;color:#dc2626" onchange="window.setCount(' + a.id + ',3,this.value)"/></td>' +
+      '<td style="text-align:center">' +
+        '<div style="display:flex;align-items:center;gap:6px;justify-content:center">' +
+          '<input class="qty-in" type="number" min="0" placeholder="—" value="' + q1 + '" onchange="window.setCount(' + a.id + ',1,this.value)"/>' +
+          (showSecond ? '<button onclick="window.toggleSecond(' + a.id + ')" style="width:24px;height:24px;border-radius:50%;border:1.5px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Ajouter un 2e emplacement">' + (q2 !== '' ? '×' : '+') + '</button>' : '') +
+          (q2 !== '' ? '<input class="qty-in" type="number" min="0" placeholder="—" value="' + q2 + '" onchange="window.setCount(' + a.id + ',2,this.value)"/>' : '') +
+        '</div>' +
+      '</td>' +
+      '<td style="text-align:center"><input class="qty-in" type="number" min="0" placeholder="0" value="' + qd + '" style="border-color:#fecaca;color:#dc2626;width:60px" onchange="window.setCount(' + a.id + ',3,this.value)"/></td>' +
       '<td style="text-align:center;font-weight:700;color:var(--gold)">' + (showTot ? tot : '—') + '</td>' +
       '</tr>';
   });
