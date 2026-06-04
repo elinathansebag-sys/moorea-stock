@@ -173,27 +173,27 @@ tr:hover td{background:#faf9f6}
 
   <!-- HOME -->
   <div id="page-home">
-    <div class="home-hero" style="padding:2rem 1rem 1rem">
+    <div class="home-hero" style="padding:2rem 1rem 1.5rem">
       <h1>Inventaire Stock</h1>
-      <p>Dépôt Moorea · GMS & Prestige</p>
+      <p>Dépôt Moorea</p>
     </div>
 
-    <!-- UPLOAD (ordi) -->
+    <!-- Upload -->
     <div class="card">
-      <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Importer un fichier stock</div>
+      <div class="section-title"><i class="ti ti-file-spreadsheet"></i> Importer le stock</div>
       <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
         <i class="ti ti-cloud-upload"></i>
-        <p>Cliquez ou déposez le fichier Excel ici</p>
-        <small>.xlsx — le stock sera disponible sur tous les appareils</small>
+        <p id="drop-label">Cliquez ou déposez le fichier Excel ici</p>
+        <small>.xlsx — synchronisé sur tous les appareils</small>
       </div>
       <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
       <div class="upload-ok" id="upload-ok"></div>
     </div>
 
-    <!-- EQUIPE (apparait apres chargement) -->
+    <!-- Equipe — toujours visible si stock dispo -->
     <div class="card" id="team-select-card" style="display:none">
       <div class="section-title"><i class="ti ti-users"></i> Choisissez votre équipe</div>
-      <div id="stock-info-label" style="font-size:13px;color:var(--gray);margin-bottom:1rem"></div>
+      <p id="stock-info-label" style="font-size:13px;color:var(--gray);margin-bottom:1rem"></p>
       <div class="team-grid">
         <div class="team-card gms" onclick="startSession('GMS')">
           <div class="ico">🌿</div>
@@ -208,11 +208,6 @@ tr:hover td{background:#faf9f6}
       </div>
     </div>
 
-    <!-- HISTORIQUE inline sur la home -->
-    <div class="card" style="margin-top:.5rem">
-      <div class="section-title"><i class="ti ti-history"></i> Historique des inventaires</div>
-      <div id="home-histo-list"><div class="empty-state" style="padding:1.5rem"><i class="ti ti-loader"></i>Chargement...</div></div>
-    </div>
   </div>
 
   <!-- COMPTAGE -->
@@ -337,7 +332,7 @@ tr:hover td{background:#faf9f6}
 <script src="stock_data.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, getDoc, collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDETa9aJzOdVAMpDLMv8inFKZ921yiCzY8",
@@ -482,12 +477,7 @@ function readFile(file) {
     toast(allArticles.length + ' articles chargés');
     // Save stock to Firebase so all devices can access it
     saveStockToFirebase(file.name);
-    // Show team selection card
-    const card = document.getElementById('team-select-card');
-    const lbl = document.getElementById('stock-info-label');
-    if (lbl) lbl.innerHTML = '<i class="ti ti-circle-check" style="color:#15803d;margin-right:6px"></i><span style="color:#15803d;font-weight:600">Stock importé</span> · ' + file.name + ' · ' + allArticles.length + ' articles';
-    if (card) card.style.display = 'block';
-    renderHomeHisto();
+    showTeamCard(file.name, allArticles.length, TODAY, true);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -506,7 +496,6 @@ window.showPage = function(p) {
   if (p === 'comptage') { updateMetricsC(); renderTable(); }
   if (p === 'config') renderConfig();
   if (p === 'historique') renderHistorique();
-  if (p === 'home') renderHomeHisto();
 };
 
 window.addEventListener('load', async () => {
@@ -514,7 +503,6 @@ window.addEventListener('load', async () => {
     allArticles = STOCK_DATA.map(d => ({ ...d, compte: null }));
   }
   loadAssignments();
-  renderHomeHisto();
 });
 
 function updateHomeCounts() {}
@@ -523,43 +511,6 @@ function updateHomeCounts() {}
 
 
 
-async function renderHomeHisto() {
-  const list = document.getElementById('home-histo-list');
-  if (!list) return;
-  try {
-    const stocksSnap = await getDocs(collection(db, 'stocks'));
-    const stocks = [];
-    stocksSnap.forEach(d => stocks.push({ id: d.id, ...d.data() }));
-    stocks.sort((a, b) => b.date.localeCompare(a.date));
-    if (!stocks.length) {
-      list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-history"></i>Aucun inventaire</div>';
-      return;
-    }
-    const comptSnap = await getDocs(collection(db, 'comptages'));
-    const comptages = {};
-    comptSnap.forEach(d => { comptages[d.id] = d.data(); });
-
-    list.innerHTML = stocks.slice(0, 10).map(s => {
-      const gmsData = comptages[s.id + '_GMS'];
-      const presData = comptages[s.id + '_PRESTIGE'];
-      const gmsDone = gmsData && gmsData.data ? Object.keys(gmsData.data).length : 0;
-      const presDone = presData && presData.data ? Object.keys(presData.data).length : 0;
-      const recompteCall = "recompterDepuis('" + s.id + "')";
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray-light);flex-wrap:wrap;gap:8px">' +
-        '<div>' +
-          '<div style="font-size:13px;font-weight:600">' + s.id + '</div>' +
-          '<div style="font-size:12px;color:var(--gray)">' + s.filename + ' · ' +
-            '<span style="color:#92710a">GMS ' + gmsDone + '/' + s.gms + '</span> · ' +
-            '<span style="color:#7c3aed">Prestige ' + presDone + '/' + s.prestige + '</span>' +
-          '</div>' +
-        '</div>' +
-        '<button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="' + recompteCall + '"><i class="ti ti-clipboard-list"></i> Compter</button>' +
-      '</div>';
-    }).join('') + (stocks.length > 10 ? '<div style="font-size:12px;color:var(--gray);padding:8px 0;text-align:center">+ ' + (stocks.length-10) + ' autres dans Historique</div>' : '');
-  } catch(e) {
-    list.innerHTML = '<div class="empty-state" style="padding:1.5rem"><i class="ti ti-alert-triangle"></i>Erreur</div>';
-  }
-}
 
 window.recompterDepuis = async function(dateStr) {
   try {
@@ -570,11 +521,9 @@ window.recompterDepuis = async function(dateStr) {
       allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
       updateHomeCounts();
       setSyncStatus('ok', 'Synchronise');
+      showTeamCard(data.filename, allArticles.length, dateStr, dateStr === TODAY);
       toast('Stock du ' + dateStr + ' - ' + allArticles.length + ' articles');
       window.showPage('home');
-      setTimeout(() => {
-        document.getElementById('team-select-card').scrollIntoView({ behavior: 'smooth' });
-      }, 300);
     }
   } catch(e) {
     setSyncStatus('error', 'Erreur');
@@ -845,17 +794,21 @@ async function loadStockFromFirebase() {
   } catch(e) { return false; }
 }
 
-function showSyncBanner(data, dateId, isToday) {
+function showTeamCard(filename, nb, dateId, isToday) {
   const card = document.getElementById('team-select-card');
   const lbl = document.getElementById('stock-info-label');
   if (!card) return;
   const color = isToday ? '#15803d' : '#b45309';
-  const icon = isToday ? 'ti-circle-check' : 'ti-clock';
   const label = isToday ? 'Stock du jour' : 'Stock du ' + dateId;
-  if (lbl) lbl.innerHTML = '<i class="ti ' + icon + '" style="color:' + color + ';margin-right:6px"></i>' +
-    '<span style="color:' + color + ';font-weight:600">' + label + '</span>' +
-    ' · ' + data.filename + ' · ' + data.nb + ' articles';
+  if (lbl) lbl.innerHTML =
+    '<i class="ti ti-circle-check" style="color:' + color + ';margin-right:6px"></i>' +
+    '<span style="font-weight:600;color:' + color + '">' + label + '</span>' +
+    ' — ' + filename + ' · ' + nb + ' articles';
   card.style.display = 'block';
+}
+
+function showSyncBanner(data, dateId, isToday) {
+  showTeamCard(data.filename, data.nb, dateId, isToday);
 }
 
 async function renderHistorique() {
@@ -948,6 +901,7 @@ async function renderHistorique() {
             statBadge(gmsStats, 'GMS') +
             statBadge(presStats, 'PRESTIGE') +
             '<button class="btn-primary" style="font-size:12px;padding:6px 12px" onclick="event.stopPropagation();' + recompteCall + '"><i class="ti ti-clipboard-list"></i> Compter</button>' +
+            '<button style="padding:6px 10px;border:1.5px solid #fecaca;border-radius:8px;background:transparent;color:#dc2626;cursor:pointer;font-size:12px;font-family:inherit" onclick="window.deleteImport(\'' + dateStr + '\',event)"><i class="ti ti-trash"></i></button>' +
           '</div>' +
         '</div>' +
         '<div class="histo-detail" id="hd-' + dateStr + '">' +
@@ -963,6 +917,21 @@ async function renderHistorique() {
     console.error(e);
   }
 }
+
+
+window.deleteImport = async function(dateStr, event) {
+  event.stopPropagation();
+  if (!confirm('Supprimer le stock du ' + dateStr + ' ainsi que tous ses comptages ?')) return;
+  try {
+    await deleteDoc(doc(db, 'stocks', dateStr));
+    await deleteDoc(doc(db, 'comptages', dateStr + '_GMS'));
+    await deleteDoc(doc(db, 'comptages', dateStr + '_PRESTIGE'));
+    toast('Import du ' + dateStr + ' supprimé');
+    renderHistorique();
+  } catch(e) {
+    toast('Erreur lors de la suppression');
+  }
+};
 
 window.toggleHisto = function(dateStr) {
   const detail = document.getElementById('hd-' + dateStr);
