@@ -454,35 +454,17 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    // Détection auto du format :
-    // Format A : col0=GMS/vide, col1=Famille, col2=Code, col3=Article, col5=NbColis
-    // Format B : col0=Famille, col1=Code, col2=Article, col4=NbColis (pas de col GMS)
-    const firstVal = String(rows[0][0] || '').toUpperCase().trim();
-    const hasGMScol = firstVal === 'GMS' || firstVal === '' ||
-      rows.slice(0,10).some(r => String(r[0]||'').toUpperCase().trim() === 'GMS');
-    allArticles = rows.map((r, i) => {
-      if (hasGMScol) {
-        return {
-          id: i + 1,
-          equipe: String(r[0] || '').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE',
-          famille: String(r[1] || ''),
-          code: String(r[2] || ''),
-          article: String(r[3] || ''),
-          nb_colis: parseInt(r[5]) || 0,
-          compte: null
-        };
-      } else {
-        return {
-          id: i + 1,
-          equipe: 'PRESTIGE',
-          famille: String(r[0] || ''),
-          code: String(r[1] || ''),
-          article: String(r[2] || ''),
-          nb_colis: parseInt(r[4]) || 0,
-          compte: null
-        };
-      }
-    }).filter(a => a.famille);
+    // Détection format : si col0 contient 'GMS' ou est vide ET col1 est une famille
+    const hasGMScol = rows.slice(0, 20).some(r => String(r[0]||'').toUpperCase().trim() === 'GMS');
+    allArticles = rows.map((r, i) => ({
+      id: i + 1,
+      equipe: hasGMScol ? (String(r[0]||'').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE') : 'PRESTIGE',
+      famille: hasGMScol ? String(r[1]||'') : String(r[0]||''),
+      code: hasGMScol ? String(r[2]||'') : String(r[1]||''),
+      article: hasGMScol ? String(r[3]||'') : String(r[2]||''),
+      nb_colis: hasGMScol ? (parseInt(r[5])||0) : (parseInt(r[4])||0),
+      compte: null, compte1: null, compte2: null, compte3: null, detruire: null
+    })).filter(a => a.famille && a.article);
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
@@ -674,16 +656,16 @@ function renderTable() {
     const showTot = q1 !== '';
     // Build inputs using array join to avoid quote issues
     const inp = [];
-    inp.push('<input class=qty-in type=number min=0 placeholder=— value=' + (q1||'') + ' onchange="window.setCount(' + a.id + ',1,this.value)">');
+    inp.push('<input class=qty-in type=number min=0 value=' + (q1||'') + ' onchange="window.setCount(' + a.id + ',1,this.value)">');
     if (q1 !== '') {
       if (q2 === '') {
         inp.push('<button class=add-loc-btn onclick="window.addLoc(' + a.id + ',2)">+</button>');
       } else {
-        inp.push('<input class=qty-in type=number min=0 placeholder=— value=' + (q2||'') + ' onchange="window.setCount(' + a.id + ',2,this.value)">');
+        inp.push('<input class=qty-in type=number min=0 value=' + (q2||'') + ' onchange="window.setCount(' + a.id + ',2,this.value)">');
         if (q3 === '') {
           inp.push('<button class=add-loc-btn onclick="window.addLoc(' + a.id + ',3)">+</button>');
         } else {
-          inp.push('<input class=qty-in type=number min=0 placeholder=— value=' + (q3||'') + ' onchange="window.setCount(' + a.id + ',3,this.value)">');
+          inp.push('<input class=qty-in type=number min=0 value=' + (q3||'') + ' onchange="window.setCount(' + a.id + ',3,this.value)">');
         }
       }
     }
