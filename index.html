@@ -461,6 +461,9 @@ window.showPage = function(p) {
     const btn = document.getElementById('nav-' + id);
     if (btn) btn.classList.toggle('active', id === p);
   });
+  const fab = document.getElementById('calc-fab');
+  if (fab) fab.classList.toggle('visible', p === 'comptage');
+  if (p !== 'comptage') { const cm = document.getElementById('calc-modal'); if(cm) cm.classList.remove('open'); }
   if (p === 'ecarts') { updateMetricsE(); renderEcarts(); }
   if (p === 'comptage') { updateMetricsC(); renderTable(); }
   if (p === 'config') renderConfig();
@@ -538,7 +541,7 @@ function launchSession(team) {
   document.getElementById('comptage-title').textContent = 'Comptage ' + team;
   document.getElementById('ecarts-title').textContent = 'Écarts ' + team;
   document.getElementById('nav-comptage').classList.remove('hidden');
-  document.getElementById('nav-ecarts').classList.remove('hidden');
+  document.getElementById('calc-fab').classList.add('visible');
   loadComptages(team).then(() => {
     updateMetricsC();
     renderTable();
@@ -827,12 +830,11 @@ document.addEventListener('focusin', e => {
 });
 
 // Show/hide calc fab based on current page
-const _origShowPage = window.showPage;
-window.showPage = function(p) {
-  _origShowPage(p);
+document.addEventListener('click', function() {
   const fab = document.getElementById('calc-fab');
-  if (fab) fab.classList.toggle('visible', p === 'comptage');
-};
+  const comptage = document.getElementById('page-comptage');
+  if (fab && comptage) fab.classList.toggle('visible', comptage.style.display !== 'none');
+});
 </script>
 
 </body>
