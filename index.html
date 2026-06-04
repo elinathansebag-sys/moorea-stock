@@ -343,8 +343,9 @@ async function saveAssignments() {
 }
 
 function getEquipe(article) {
+  // Firebase override takes priority, otherwise use Excel column A directly
   if(assignments[article.code] !== undefined) return assignments[article.code];
-  return article.equipe; // fallback to Excel column
+  return article.equipe;
 }
 
 // ── FILE UPLOAD ──
@@ -365,28 +366,45 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    allArticles = rows.map((r,i) => ({
-      id: i+1,
-      equipe: String(r[0]).toUpperCase()==='GMS' ? 'GMS' : 'PRESTIGE',
-      famille: String(r[1]||''),
-      code: String(r[2]||''),
-      article: String(r[3]||''),
-      nb_colis: parseInt(r[5])||0,
-      compte: null
-    })).filter(a => a.famille);
+    allArticles = rows.map((r,i) => {
+      const colA = String(r[0]||'').toUpperCase().trim();
+      const excelEquipe = colA === 'GMS' ? 'GMS' : (colA === '' ? '' : 'PRESTIGE');
+      return {
+        id: i+1,
+        equipe: colA === 'GMS' ? 'GMS' : 'PRESTIGE',
+        _excelEquipe: excelEquipe,
+        _fromUpload: true,
+        famille: String(r[1]||''),
+        code: String(r[2]||''),
+        article: String(r[3]||''),
+        nb_colis: parseInt(r[5])||0,
+        compte: null
+      };
+    }).filter(a => a.famille);
     document.getElementById('upload-ok').textContent = `✓ ${file.name} — ${allArticles.length} articles chargés`;
     dropZone.style.borderColor = '#1D9E75';
+    // Auto-save all Excel attributions to Firebase (col A = source of vérité)
+    let changed = false;
+    allArticles.forEach(a => {
+      if(assignments[a.code] === undefined) {
+        assignments[a.code] = a.equipe;
+        changed = true;
+      }
+    });
+    if(changed) saveAssignments();
     updateHomeCounts();
-    detectUnknown();
   };
   reader.readAsArrayBuffer(file);
 }
 
-// Detect articles not yet in Firebase assignments
+// Detect articles not yet in Firebase assignments AND not in Excel col A
 function detectUnknown() {
-  // Articles whose code is not in assignments at all
-  return allArticles.filter(a => assignments[a.code] === undefined && a.equipe === 'PRESTIGE' && a.code);
-  // We only flag truly ambiguous ones — those with empty col A that have never been attributed
+  // Only flag articles that came from a NEW upload and have no col A marker AND no Firebase entry
+  return allArticles.filter(a =>
+    assignments[a.code] === undefined &&
+    a._fromUpload === true &&
+    a._excelEquipe === '' // truly empty col A
+  );
 }
 
 // ── DEFAULT DATA ──
@@ -423,7 +441,6 @@ window.startSession = function(team) {
   buildFamPills();
   updateMetricsC();
   renderTable();
-  renderUnknownBanner();
 
   document.getElementById('home').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
@@ -437,27 +454,9 @@ window.goHome = function() {
 
 // ── UNKNOWN BANNER ──
 function renderUnknownBanner() {
-  const unknown = allArticles.filter(a =>
-    assignments[a.code] === undefined &&
-    a.equipe === 'PRESTIGE' &&
-    a.code
-  );
+  // Only show articles added manually that have no Excel col A marker
   const banner = document.getElementById('unknown-banner');
-  if(!unknown.length) { banner.classList.add('hidden'); return; }
-  banner.classList.remove('hidden');
-  banner.innerHTML = `
-    <h3>⚠️ ${unknown.length} article(s) sans attribution — à qui les affecter ?</h3>
-    ${unknown.map(a => `
-      <div class="unknown-item">
-        <div style="flex:1">
-          <div class="aname">${a.article}</div>
-          <div class="acode">${a.code} — ${a.famille}</div>
-        </div>
-        <button class="btn btn-sm btn-gms" onclick="assignUnknown('${a.code}','GMS')">GMS</button>
-        <button class="btn btn-sm btn-prestige" onclick="assignUnknown('${a.code}','PRESTIGE')">Prestige</button>
-      </div>
-    `).join('')}
-  `;
+  banner.classList.add('hidden');
 }
 
 window.assignUnknown = async function(code, equipe) {
