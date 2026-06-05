@@ -545,7 +545,7 @@ async function renderStockList(){
     const makeItem = (s, team) => {
       const c = comptages[s.id+'_'+team];
       const done = c&&c.data ? Object.keys(c.data).length : 0;
-      const total = team==='GMS' ? s.gms : s.prestige;
+      const total = team==='GMS' ? (s.gms||0) : (s.prestige||0);
       const pct = total ? Math.round(done/total*100) : 0;
       const color = team==='GMS' ? '#92710a' : '#7c3aed';
       const sid = s.id;
@@ -566,7 +566,7 @@ async function renderStockList(){
         '</div>';
       div.querySelector('.compter-btn').addEventListener('click', () => window.recompterDepuis(sid, team));
       div.querySelector('.del-btn').addEventListener('click', (e) => window.deleteStock(sid, e));
-      return div.outerHTML;
+      return div.outerHTML || '';
     };
         list.innerHTML = html;
   }catch(e){list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur</div>';}
