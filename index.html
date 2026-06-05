@@ -546,16 +546,35 @@ function readFile(file) {
 
     console.log('Colonnes:', {colEquipe,colFamille,colCode,colArticle,colQty});
 
-    allArticles = rows.map((r,i) => ({
+    // Grouper par article — additionner les quantités, collecter les lots
+    const grouped = {};
+    rows.forEach(r => {
+      const art = String(r[colArticle]||'').trim();
+      if (!art || art.length < 3) return;
+      if (isNaN(art) === false) return; // ignorer les lignes numériques
+      if (['total','article',''].includes(art.toLowerCase())) return;
+      if (art === String(r[colCode]||'').trim()) return; // ignorer si article=code (ligne vide)
+      const qty = parseInt(r[colQty]) || 0;
+      if (qty < 0) return; // ignorer quantités négatives (lignes résidus)
+      const lot = r[0] ? String(r[0]).slice(-4) : '';
+      const fam = String(r[colFamille]||'').trim();
+      if (!grouped[art]) {
+        grouped[art] = { article: art, famille: fam, nb_colis: 0, lots: [] };
+      }
+      grouped[art].nb_colis += qty;
+      if (lot && !grouped[art].lots.includes(lot)) grouped[art].lots.push(lot);
+    });
+    allArticles = Object.values(grouped).map((a, i) => ({
       id: i+1,
-      equipe: colEquipe>=0 ? (String(r[colEquipe]||'').toUpperCase().trim()==='GMS'?'GMS':'PRESTIGE') : 'PRESTIGE',
-      famille: String(r[colFamille]||''),
-      code: colCode>=0 ? String(r[colCode]||'') : '',
-      article: String(r[colArticle]||''),
-      nb_colis: colQty>=0 ? (parseInt(r[colQty])||0) : 0,
-      lot: r[0] ? String(r[0]).slice(-4) : '',
+      equipe: 'PRESTIGE', // sera remplacé par getEquipe
+      famille: a.famille,
+      code: '',
+      article: a.article,
+      nb_colis: a.nb_colis,
+      lots: a.lots,
+      lot: a.lots.join(', '),
       compte: null, compte1:null, compte2:null, compte3:null, detruire:null
-    })).filter(a => a.article && a.article.length > 2 && isNaN(a.article) && a.article.toLowerCase() !== 'total' && a.article.toLowerCase() !== 'article');
+    }));
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
@@ -607,7 +626,7 @@ window.recompterDepuis = async function(dateStr) {
     const snap = await getDoc(doc(db, 'stocks', dateStr));
     if (snap.exists()) {
       const data = snap.data();
-      allArticles = data.articles.map(a => ({ ...a, compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
+      allArticles = data.articles.map(a => ({ ...a, lots: a.lots || [], lot: a.lot || '', compte: null, compte1: null, compte2: null, compte3: null, detruire: null }));
       currentImportId = dateStr;
       updateHomeCounts();
       setSyncStatus('ok', 'Synchronise');
@@ -837,7 +856,8 @@ function renderEcarts() {
     const e = ecart(a), sign = e > 0 ? '+' : '';
     const cls = e > 0 ? 'ep' : e < 0 ? 'en' : 'ez';
     const badge = e === 0 ? '<span class="badge badge-ok">OK</span>' : e > 0 ? '<span class="badge badge-surplus">Surplus</span>' : '<span class="badge badge-manque">Manque</span>';
-    const lotBadge = (e !== 0 && a.lot) ? '<span style="font-size:10px;background:#f5f3ee;border:1px solid var(--gray-light);border-radius:6px;padding:2px 6px;color:var(--gray);margin-left:6px">lot …' + a.lot + '</span>' : '';
+    const lotsStr = (a.lots && a.lots.length) ? a.lots.map(l => '…'+l).join(' ') : (a.lot ? '…'+a.lot : '');
+    const lotBadge = (e !== 0 && lotsStr) ? '<span style="font-size:10px;background:#f5f3ee;border:1px solid var(--gray-light);border-radius:6px;padding:2px 6px;color:var(--gray);margin-left:6px">lots ' + lotsStr + '</span>' : '';
     return '<tr><td style="font-weight:500">' + a.article + lotBadge + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
   }).join('');
 }
@@ -858,7 +878,7 @@ async function saveStockToFirebase(filename) {
       nb: allArticles.length,
       gms: allArticles.filter(a => getEquipe(a) === 'GMS').length,
       prestige: allArticles.filter(a => getEquipe(a) === 'PRESTIGE').length,
-      articles: allArticles.map(a => ({ id: a.id, equipe: getEquipe(a), famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis, lot: a.lot || '' }))
+      articles: allArticles.map(a => ({ id: a.id, equipe: getEquipe(a), famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis, lot: a.lot || '', lots: a.lots || [] }))
     };
     const importId = new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
     currentImportId = importId;
@@ -1057,8 +1077,7 @@ window.exportPDF = function() {
     const destroy = a.detruire ? '<td style="text-align:center;color:#dc2626;font-weight:600">' + a.detruire + '</td>' : '<td style="text-align:center;color:#999">—</td>';
     const bgrow = highlight ? 'background:#fff5f5' : '';
     return '<tr style="' + bgrow + '">' +
-      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + (a.lot ? ' <span style="font-size:10px;color:#6b7280;background:#f5f3ee;padding:1px 5px;border-radius:4px">lot …' + a.lot + '</span>' : '') + (a.comment ? '<br><span style="font-size:11px;color:#6b7280;font-style:italic">' + a.comment + '</span>' : '') + '</td>' +
-      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px">' + a.nb_colis + '</td>' +
+      (function(a){ const lotsLabel = (a.lots && a.lots.length) ? 'lots ' + a.lots.map(l=>'…'+l).join(' ') : (a.lot ? 'lot …'+a.lot : ''); return '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + (lotsLabel ? ' <span style="font-size:10px;color:#6b7280;background:#f5f3ee;padding:1px 5px;border-radius:4px">' + lotsLabel + '</span>' : '') + (a.comment ? '<br><span style="font-size:11px;color:#6b7280;font-style:italic">' + a.comment + '</span>' : '') + '</td>'; })(a) +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px;font-weight:600">' + (counted(a) ? a.compte : '—') + '</td>' +
       destroy.replace('<td', '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px;text-align:center;color:' + (a.detruire ? '#dc2626' : '#999') + ';font-weight:' + (a.detruire ? '600' : '400') + '"') +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px;font-weight:600;color:' + ecolor + '">' + (e !== '' ? sign + e : '—') + '</td>' +
