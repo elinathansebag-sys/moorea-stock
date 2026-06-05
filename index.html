@@ -519,6 +519,7 @@ function readFile(file) {
       code: colCode>=0 ? String(r[colCode]||'') : '',
       article: String(r[colArticle]||''),
       nb_colis: colQty>=0 ? (parseInt(r[colQty])||0) : 0,
+      lot: r[0] ? String(r[0]).slice(-4) : '',
       compte: null, compte1:null, compte2:null, compte3:null, detruire:null
     })).filter(a => a.article && a.article.length > 2 && isNaN(a.article) && a.article.toLowerCase() !== 'total' && a.article.toLowerCase() !== 'article');
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
@@ -802,7 +803,8 @@ function renderEcarts() {
     const e = ecart(a), sign = e > 0 ? '+' : '';
     const cls = e > 0 ? 'ep' : e < 0 ? 'en' : 'ez';
     const badge = e === 0 ? '<span class="badge badge-ok">OK</span>' : e > 0 ? '<span class="badge badge-surplus">Surplus</span>' : '<span class="badge badge-manque">Manque</span>';
-    return '<tr><td style="font-weight:500">' + a.article + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
+    const lotBadge = (e !== 0 && a.lot) ? '<span style="font-size:10px;background:#f5f3ee;border:1px solid var(--gray-light);border-radius:6px;padding:2px 6px;color:var(--gray);margin-left:6px">lot …' + a.lot + '</span>' : '';
+    return '<tr><td style="font-weight:500">' + a.article + lotBadge + '</td><td style="text-align:right">' + a.nb_colis + '</td><td style="text-align:right;font-weight:700">' + a.compte + '</td><td class="' + cls + '" style="text-align:right">' + sign + e + '</td><td>' + badge + '</td></tr>';
   }).join('');
 }
 
@@ -822,7 +824,7 @@ async function saveStockToFirebase(filename) {
       nb: allArticles.length,
       gms: allArticles.filter(a => a.equipe === 'GMS').length,
       prestige: allArticles.filter(a => a.equipe === 'PRESTIGE').length,
-      articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis }))
+      articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis, lot: a.lot || '' }))
     };
     const importId = new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
     currentImportId = importId;
@@ -1021,7 +1023,7 @@ window.exportPDF = function() {
     const destroy = a.detruire ? '<td style="text-align:center;color:#dc2626;font-weight:600">' + a.detruire + '</td>' : '<td style="text-align:center;color:#999">—</td>';
     const bgrow = highlight ? 'background:#fff5f5' : '';
     return '<tr style="' + bgrow + '">' +
-      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + (a.comment ? '<br><span style="font-size:11px;color:#6b7280;font-style:italic">' + a.comment + '</span>' : '') + '</td>' +
+      '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px">' + a.article + (a.lot ? ' <span style="font-size:10px;color:#6b7280;background:#f5f3ee;padding:1px 5px;border-radius:4px">lot …' + a.lot + '</span>' : '') + (a.comment ? '<br><span style="font-size:11px;color:#6b7280;font-style:italic">' + a.comment + '</span>' : '') + '</td>' +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px">' + a.nb_colis + '</td>' +
       '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;text-align:center;font-size:12px;font-weight:600">' + (counted(a) ? a.compte : '—') + '</td>' +
       destroy.replace('<td', '<td style="padding:6px 10px;border-bottom:1px solid #e8e0d0;font-size:12px;text-align:center;color:' + (a.detruire ? '#dc2626' : '#999') + ';font-weight:' + (a.detruire ? '600' : '400') + '"') +
