@@ -146,6 +146,10 @@ tr:hover td{background:#faf9f6}
 
 .empty-state{text-align:center;padding:2.5rem;color:#bbb}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;opacity:.3}
+
+.fusion-mode .cfg-row{cursor:pointer}
+.cfg-row.selected{background:#fffbf0;border-left:3px solid var(--gold)}
+.fusion-bar{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:12px;z-index:200;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -264,11 +268,12 @@ tr:hover td{background:#faf9f6}
   <div class="section-title"><i class="ti ti-settings"></i> Répartition GMS / Prestige</div>
   <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Liste fixe des articles et leur équipe. Basée sur le fichier de référence.</p>
   <div class="card">
-    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
       <button class="pill active" id="cf-tous" onclick="setCF('tous')">Tous</button>
       <button class="pill" id="cf-gms" onclick="setCF('GMS')">GMS</button>
       <button class="pill" id="cf-prestige" onclick="setCF('PRESTIGE')">Prestige</button>
-      <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" style="max-width:220px"/>
+      <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" style="max-width:200px"/>
+      <button class="btn btn-sm" id="btn-fusion-mode" onclick="toggleFusionMode()"><i class="ti ti-link"></i> Fusionner</button>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -305,6 +310,11 @@ tr:hover td{background:#faf9f6}
   </div>
 </div>
 
+<div id="fusion-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 20px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);align-items:center;gap:12px;z-index:200;white-space:nowrap;flex-wrap:wrap">
+  <span id="fusion-label" style="font-size:13px">Sélectionnez 2 articles à fusionner</span>
+  <button class="btn btn-sm btn-gold" onclick="confirmerFusion()">Fusionner</button>
+  <button class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)" onclick="annulerFusion()">Annuler</button>
+</div>
 <div class="toast" id="toast"></div>
 <button class="calc-fab" id="calc-fab" onclick="toggleCalc()">🧮</button>
 <div class="calc-modal" id="calc-modal">
@@ -543,6 +553,7 @@ function launchSession(team){
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.add('hidden');
   loadComptages(team).then(()=>{updateMetricsC();renderTable();});
+  loadHistoArticles(); // preload for search
   showPage('comptage');
 }
 
@@ -576,7 +587,8 @@ async function renderStockList(){
           '<div style="font-size:11px;color:var(--gray);margin-top:3px">'+done+'/'+total+' · '+pct+'%</div>'+
         '</div>'+
         '<div class="stock-actions">'+
-          '<button class="btn btn-sm btn-gold" onclick="window.recompterDepuis(this.dataset.sid,this.dataset.team)" data-sid="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>'+
+          (s.cloture ? '' : '<button class="btn btn-sm btn-gold" onclick="window.recompterDepuis(this.dataset.sid,this.dataset.team)" data-sid="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>')+
+          (s.cloture ? '<span style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:4px 10px;border-radius:8px;font-weight:600">✓ Clôturé</span>' : '<button class="btn btn-sm" style="border-color:#bbf7d0;color:#15803d" onclick="window.cloturerStock(this.dataset.sid,event)" data-sid="'+sid+'"><i class="ti ti-lock"></i> Clôturer</button>')+
           '<button class="btn btn-sm btn-danger" onclick="window.deleteStock(this.dataset.sid,event)" data-sid="'+sid+'"><i class="ti ti-trash"></i></button>'+
         '</div>'+
       '</div>';
@@ -617,6 +629,18 @@ window.recompterDepuis=async function(stockId,team){
   }catch(e){setSyncStatus('error','Erreur');}
 };
 
+
+window.cloturerStock=async function(sid,e){
+  e.stopPropagation();
+  if(!confirm('Clôturer ce stock ? Il ne sera plus modifiable.')) return;
+  try{
+    const snap=await getDoc(doc(db,'stocks',sid));
+    if(snap.exists()) await setDoc(doc(db,'stocks',sid),{...snap.data(),cloture:true,clotureDate:new Date().toLocaleString('fr-FR')},{merge:true});
+    toast('Stock clôturé');
+    renderStockList();
+  }catch(e){toast('Erreur');}
+};
+
 window.deleteStock=async function(id,e){
   e.stopPropagation();
   if(!confirm('Supprimer ce stock et ses comptages ?')) return;
@@ -635,14 +659,38 @@ window.setCount=function(id,loc,val){
   const hasCount=a.compte1!==null&&a.compte1!==undefined;
   if(hasCount){let t=0;for(let i=1;i<=8;i++)t+=a['compte'+i]??0;a.compte=t;}else a.compte=null;
   updateMetricsC();
-  renderTable();
+  // Met à jour uniquement la cellule total sans recréer le tableau
+  const row = document.querySelector('tr[data-id="'+id+'"]');
+  if(row){
+    const totCell = row.querySelector('.tot-cell');
+    if(totCell){
+      let t=0;for(let i=1;i<=8;i++)t+=a['compte'+i]??0;
+      totCell.textContent = (a.compte1!==null&&a.compte1!==undefined) ? t : '-';
+    }
+  }
   clearTimeout(comptageTimeout);
   comptageTimeout=setTimeout(saveComptages,1500);
 };
 
 window.addLoc=function(id,loc){
   const a=articles.find(x=>x.id===id);if(!a)return;
-  a['compte'+loc]=0;renderTable();
+  a['compte'+loc]=0;
+  // Add input next to the + button without full re-render
+  const btn=document.querySelector('button.add-loc-btn[onclick*="addLoc('+id+','+loc+')"]');
+  if(btn){
+    const inp=document.createElement('input');
+    inp.className='qty-in';inp.type='number';inp.min='0';inp.value='';
+    inp.onchange=function(){window.setCount(id,loc,this.value);};
+    const newBtn=document.createElement('button');
+    newBtn.className='add-loc-btn';newBtn.textContent='+';
+    newBtn.onclick=function(){window.addLoc(id,loc+1);};
+    btn.parentNode.insertBefore(inp,btn);
+    if(loc<8){btn.setAttribute('onclick','window.addLoc('+id+','+(loc+1)+')');}
+    else btn.remove();
+    inp.focus();
+  } else {
+    renderTable();
+  }
 };
 
 function updateMetricsC(){
@@ -683,11 +731,11 @@ function renderTable(){
     
     const destroy='<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="'+qd+'" onchange="window.setCount('+a.id+',9,this.value)">';
     
-    html+='<tr>'+
+    html+='<tr data-id="'+a.id+'">'+
       '<td style="font-weight:500">'+a.article+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap">'+inp+'</div></td>'+
       '<td style="text-align:center">'+destroy+'</td>'+
-      '<td style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
+      '<td class="tot-cell" style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
     '</tr>';
   });
   document.getElementById('tbl-body').innerHTML=html;
@@ -722,16 +770,26 @@ async function loadHistoArticles(){
   }catch(e){}
   return histoArticlesCache;
 }
-window.searchAddArticle=async function(val){
+window.searchAddArticle=function(val){
   const box=document.getElementById('add-art-suggestions');
   if(!val||val.length<2){box.style.display='none';return;}
   const q=val.toLowerCase();
-  const all=await loadHistoArticles();
-  const scored=all.filter(a=>!articles.find(x=>x.article===a.article))
-    .map(a=>{const n=a.article.toLowerCase();return{...a,score:n.startsWith(q)?3:n.includes(' '+q)?2:n.includes(q)?1:0};})
-    .filter(a=>a.score>0).sort((a,b)=>b.score-a.score).slice(0,7);
-  if(!scored.length){box.innerHTML='<div style="padding:10px 14px;font-size:13px;color:var(--gray)">Aucun résultat — sera créé</div>';box.style.display='block';return;}
-  box.innerHTML=scored.map(a=>'<div style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--gray-light);display:flex;justify-content:space-between" onclick="window.selectAddArt(\''+encodeURIComponent(JSON.stringify(a))+'\')"><span>'+a.article+'</span><span style="font-size:11px;color:var(--gray)">'+a.famille+'</span></div>').join('');
+  // Base complète STOCK_DATA + historique
+  let source=[];
+  if(typeof STOCK_DATA!=='undefined') source=[...STOCK_DATA];
+  histoArticlesCache.forEach(a=>{if(!source.find(s=>s.article===a.article))source.push(a);});
+  const scored=source
+    .filter(a=>!articles.find(x=>x.article===a.article))
+    .map(a=>{const n=a.article.toLowerCase();const score=n.startsWith(q)?4:n.includes(' '+q)?3:n.includes(q)?2:q.split(' ').every(w=>n.includes(w))?1:0;return{...a,score};})
+    .filter(a=>a.score>0).sort((a,b)=>b.score-a.score).slice(0,10);
+  if(!scored.length){
+    box.innerHTML='<div style="padding:10px 14px;font-size:13px;color:var(--gray);font-style:italic">Aucun résultat — sera ajouté comme nouvel article</div>';
+    box.style.display='block';return;
+  }
+  box.innerHTML=scored.map(a=>{
+    const enc=encodeURIComponent(JSON.stringify({article:a.article,famille:a.famille||'',equipe:a.equipe||''}));
+    return '<div style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--gray-light)" onclick="window.selectAddArt(\''+enc+'\')">' + a.article + ' <small style="color:var(--gray)">'+a.famille+'</small></div>';
+  }).join('');
   box.style.display='block';
 };
 window.selectAddArt=function(enc){
@@ -833,6 +891,57 @@ window.exportPDF=function(){
 };
 
 // ── CONFIG ──
+
+let fusionMode = false;
+let fusionSelected = [];
+
+window.toggleFusionMode = function() {
+  fusionMode = !fusionMode;
+  fusionSelected = [];
+  document.getElementById('btn-fusion-mode').style.background = fusionMode ? 'var(--gold)' : '';
+  document.getElementById('btn-fusion-mode').style.color = fusionMode ? 'var(--dark)' : '';
+  document.getElementById('fusion-bar').style.display = fusionMode ? 'flex' : 'none';
+  renderConfig();
+};
+
+window.toggleFusionSelect = function(article) {
+  if (!fusionMode) return;
+  const idx = fusionSelected.indexOf(article);
+  if (idx >= 0) fusionSelected.splice(idx, 1);
+  else if (fusionSelected.length < 2) fusionSelected.push(article);
+  // Update label
+  const lbl = document.getElementById('fusion-label');
+  if (fusionSelected.length === 0) lbl.textContent = 'Sélectionnez 2 articles à fusionner';
+  else if (fusionSelected.length === 1) lbl.textContent = '1 sélectionné — choisissez le 2e';
+  else lbl.textContent = fusionSelected[0] + ' + ' + fusionSelected[1];
+  renderConfig();
+};
+
+window.confirmerFusion = async function() {
+  if (fusionSelected.length < 2) { toast('Sélectionnez 2 articles'); return; }
+  const [art1, art2] = fusionSelected;
+  const nom = prompt('Nom final de l\'article fusionne :', art1);
+  if (!nom) return;
+  // Save fusion to Firebase
+  try {
+    const snap = await getDoc(doc(db, 'config', 'fusions'));
+    const fusions = snap.exists() ? (snap.data().list || []) : [];
+    fusions.push({ art1, art2, nom, date: new Date().toISOString() });
+    await setDoc(doc(db, 'config', 'fusions'), { list: fusions });
+    toast(art1 + ' + ' + art2 + ' fusionnés en "' + nom + '"');
+  } catch(e) { toast('Erreur'); }
+  annulerFusion();
+};
+
+window.annulerFusion = function() {
+  fusionMode = false;
+  fusionSelected = [];
+  document.getElementById('btn-fusion-mode').style.background = '';
+  document.getElementById('btn-fusion-mode').style.color = '';
+  document.getElementById('fusion-bar').style.display = 'none';
+  renderConfig();
+};
+
 window.setCF=function(f){
   cfFilter=f;
   ['tous','gms','prestige'].forEach(t=>{const el=document.getElementById('cf-'+t);if(el)el.classList.toggle('active',(f==='tous'&&t==='tous')||(f==='GMS'&&t==='gms')||(f==='PRESTIGE'&&t==='prestige'));});
@@ -848,7 +957,13 @@ function renderConfig(){
     return true;
   });
   if(!rows.length){document.getElementById('cfg-body').innerHTML='<tr><td colspan="3" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>';return;}
-  document.getElementById('cfg-body').innerHTML=rows.map(a=>'<tr><td style="font-weight:500">'+a.article+'</td><td style="font-size:12px;color:var(--gray)">'+a.famille+'</td><td><span class="badge '+(a.equipe==='GMS'?'badge-surplus':'badge-nc')+'">'+a.equipe+'</span></td></tr>').join('');
+  document.getElementById('cfg-body').innerHTML=rows.map(a=>{
+    const selected = fusionSelected.includes(a.article);
+    const bg = selected ? 'background:#fffbf0;border-left:3px solid var(--gold)' : '';
+    const cursor = fusionMode ? 'cursor:pointer' : '';
+    const onclick = fusionMode ? 'onclick="window.toggleFusionSelect(\'' + a.article.replace(/'/g,"\\'") + '\')"' : '';
+    return '<tr style="'+bg+';'+cursor+'" '+onclick+'><td style="font-weight:500">'+a.article+(selected?' <span style="font-size:10px;color:var(--gold);font-weight:700">✓</span>':'')+'</td><td style="font-size:12px;color:var(--gray)">'+a.famille+'</td><td><span class="badge '+(a.equipe==='GMS'?'badge-surplus':'badge-nc')+'">'+a.equipe+'</span></td></tr>';
+  }).join('');
 }
 
 // ── INIT ──
