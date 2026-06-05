@@ -503,15 +503,6 @@ function readFile(file){
     await saveStock(file.name, allArticles);
     document.getElementById('upload-status').textContent='✓ '+file.name+' — '+allArticles.length+' articles enregistrés';
     document.getElementById('file-input').value='';
-    
-    // Afficher modal choix équipe
-    const gms=allArticles.filter(a=>getEquipe(a)==='GMS').length;
-    const pres=allArticles.filter(a=>getEquipe(a)==='PRESTIGE').length;
-    document.getElementById('modal-stock-info').textContent=file.name+' · '+allArticles.length+' articles · '+gms+' GMS · '+pres+' Prestige';
-    document.getElementById('modal-gms-count').textContent=gms+' articles';
-    document.getElementById('modal-prestige-count').textContent=pres+' articles';
-    document.getElementById('modal-team').classList.add('open');
-    
     renderStockList();
     toast(allArticles.length+' articles importés');
   };
@@ -551,30 +542,37 @@ async function renderStockList(){
     const comptSnap=await getDocs(collection(db,'comptages'));
     const comptages={};
     comptSnap.forEach(d=>{comptages[d.id]=d.data();});
-    list.innerHTML=stocks.map(s=>{
-      const gmsC=comptages[s.id+'_GMS'];
-      const presC=comptages[s.id+'_PRESTIGE'];
-      const gmsDone=gmsC&&gmsC.data?Object.keys(gmsC.data).length:0;
-      const presDone=presC&&presC.data?Object.keys(presC.data).length:0;
-      const recompteCall="window.recompterDepuis('"+s.id+"')";
-      return '<div class="stock-item">'+
-        '<div>'+
-          '<div class="stock-date">📅 '+s.dateLabel+'</div>'+
-          '<div class="stock-meta">'+s.filename+' · '+s.nb+' articles · '+
-            '<span style="color:#92710a">GMS '+gmsDone+'/'+s.gms+'</span> · '+
-            '<span style="color:#7c3aed">Prestige '+presDone+'/'+s.prestige+'</span>'+
+    const makeItem = (s, team) => {
+      const c = comptages[s.id+'_'+team];
+      const done = c&&c.data ? Object.keys(c.data).length : 0;
+      const total = team==='GMS' ? s.gms : s.prestige;
+      const pct = total ? Math.round(done/total*100) : 0;
+      const color = team==='GMS' ? '#92710a' : '#7c3aed';
+      const sid = s.id;
+      const div = document.createElement('div');
+      div.className = 'stock-item';
+      div.innerHTML = 
+        '<div style="flex:1">'+
+          '<div style="font-size:13px;font-weight:700">📅 '+s.dateLabel+'</div>'+
+          '<div style="font-size:12px;color:var(--gray);margin-top:2px">'+s.filename+' · '+total+' articles</div>'+
+          '<div style="margin-top:6px;height:5px;background:var(--gray-light);border-radius:3px;overflow:hidden;max-width:180px">'+
+            '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px"></div>'+
           '</div>'+
+          '<div style="font-size:11px;color:var(--gray);margin-top:3px">'+done+'/'+total+' · '+pct+'%</div>'+
         '</div>'+
         '<div class="stock-actions">'+
-          '<button class="btn btn-sm btn-gold" onclick="'+recompteCall+'"><i class="ti ti-clipboard-list"></i> Compter</button>'+
-          '<button class="btn btn-sm btn-danger" onclick="window.deleteStock(\''+s.id+'\',event)"><i class="ti ti-trash"></i></button>'+
-        '</div>'+
-      '</div>';
-    }).join('');
+          '<button class="btn btn-sm btn-gold compter-btn" data-id="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>'+
+          '<button class="btn btn-sm btn-danger del-btn" data-id="'+sid+'"><i class="ti ti-trash"></i></button>'+
+        '</div>';
+      div.querySelector('.compter-btn').addEventListener('click', () => window.recompterDepuis(sid, team));
+      div.querySelector('.del-btn').addEventListener('click', (e) => window.deleteStock(sid, e));
+      return div.outerHTML;
+    };
+        list.innerHTML = html;
   }catch(e){list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur</div>';}
 }
 
-window.recompterDepuis=async function(stockId){
+window.recompterDepuis=async function(stockId, team){
   setSyncStatus('loading','Chargement...');
   try{
     const snap=await getDoc(doc(db,'stocks',stockId));
@@ -583,12 +581,17 @@ window.recompterDepuis=async function(stockId){
       allArticles=data.articles.map(a=>({...a,lots:a.lots||[],lot:a.lot||'',compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
       currentImportId=stockId;
       setSyncStatus('ok','Synchronisé');
-      const gms=allArticles.filter(a=>getEquipe(a)==='GMS').length;
-      const pres=allArticles.filter(a=>getEquipe(a)==='PRESTIGE').length;
-      document.getElementById('modal-stock-info').textContent=data.filename+' · '+allArticles.length+' articles · '+gms+' GMS · '+pres+' Prestige';
-      document.getElementById('modal-gms-count').textContent=gms+' articles';
-      document.getElementById('modal-prestige-count').textContent=pres+' articles';
-      document.getElementById('modal-team').classList.add('open');
+      if(team){
+        // Démarrer directement avec l'équipe choisie
+        launchSession(team);
+      } else {
+        const gms=allArticles.filter(a=>getEquipe(a)==='GMS').length;
+        const pres=allArticles.filter(a=>getEquipe(a)==='PRESTIGE').length;
+        document.getElementById('modal-stock-info').textContent=data.filename+' · '+allArticles.length+' articles · '+gms+' GMS · '+pres+' Prestige';
+        document.getElementById('modal-gms-count').textContent=gms+' articles';
+        document.getElementById('modal-prestige-count').textContent=pres+' articles';
+        document.getElementById('modal-team').classList.add('open');
+      }
     }
   }catch(e){setSyncStatus('error','Erreur');}
 };
