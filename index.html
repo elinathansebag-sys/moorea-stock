@@ -822,9 +822,9 @@ async function saveStockToFirebase(filename) {
       date: new Date().toISOString(),
       dateLabel: new Date().toLocaleString('fr-FR'),
       nb: allArticles.length,
-      gms: allArticles.filter(a => a.equipe === 'GMS').length,
-      prestige: allArticles.filter(a => a.equipe === 'PRESTIGE').length,
-      articles: allArticles.map(a => ({ id: a.id, equipe: a.equipe, famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis, lot: a.lot || '' }))
+      gms: allArticles.filter(a => getEquipe(a) === 'GMS').length,
+      prestige: allArticles.filter(a => getEquipe(a) === 'PRESTIGE').length,
+      articles: allArticles.map(a => ({ id: a.id, equipe: getEquipe(a), famille: a.famille, code: a.code, article: a.article, nb_colis: a.nb_colis, lot: a.lot || '' }))
     };
     const importId = new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
     currentImportId = importId;
