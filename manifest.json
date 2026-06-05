@@ -1,0 +1,18 @@
+{
+  "name": "Moorea · Inventaire Stock",
+  "short_name": "Moorea Stock",
+  "description": "Gestion du stock GMS & Prestige",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "1084x1084",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
