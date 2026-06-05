@@ -650,13 +650,7 @@ window.startFromSync = function() {
 
 window.startSession = function(team) {
   if (!allArticles.length) { toast("Chargez d'abord le fichier Excel"); return; }
-  // Articles pas encore confirmés = nouveaux articles jamais attribués
-  const unconfirmed = allArticles.filter(a => !confirmed.has(a.code));
-  if (unconfirmed.length > 0) {
-    pendingTeam = team;
-    openUndefModal(unconfirmed);
-    return;
-  }
+  // La répartition est fixe dans STOCK_DATA - pas besoin de popup
   launchSession(team);
 };
 
