@@ -464,7 +464,7 @@ async function saveStock(filename, articles){
     nb: articles.length,
     gms: articles.filter(a=>getEquipe(a)==='GMS').length,
     prestige: articles.filter(a=>getEquipe(a)==='PRESTIGE').length,
-    articles: articles.map(a=>({id:a.id,equipe:getEquipe(a),famille:a.famille,code:a.code,article:a.article,nb_colis:a.nb_colis,lot:a.lot||'',lots:a.lots||[]}))
+    articles: articles.map(a=>({id:a.id,equipe:getEquipe(a),famille:a.famille,code:a.code,article:a.article,nb_colis:a.nb_colis,lot:a.lot||'',lots:a.lots||[],lotsQty:a.lotsQty||{}}))
   });
   setSyncStatus('ok','Synchronisé');
   currentImportId = importId;
