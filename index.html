@@ -516,11 +516,14 @@ function readFile(file) {
     const findCol = (kws) => { for(const kw of kws){ const i=hdrs.findIndex(h=>h.includes(kw)); if(i>=0) return i; } return -1; };
     const isNumCol = (ci) => { const v=rows.slice(0,15).map(r=>r[ci]).filter(v=>v!==''&&v!=null); return v.length>0 && v.filter(v=>!isNaN(parseFloat(v))).length/v.length>0.6; };
 
+    // Recherche exacte en priorité, puis partielle
+    const findExact = (kws) => { for(const kw of kws){ const i=hdrs.findIndex(h=>h===kw); if(i>=0) return i; } return -1; };
     let colEquipe  = findCol(['gms','equipe','équipe','acheteur','lot']);
-    let colFamille = findCol(['famille']);
-    let colCode    = findCol(['code article','code art','référence','ref','sku','code']);
-    let colArticle = findCol(['article','designation','désignation','libelle','libellé','nom produit']);
-    let colQty     = findCol(['nb colis','quantit','qté','qty','colis']);
+    let colFamille = findExact(['famille']) >= 0 ? findExact(['famille']) : findCol(['famille']);
+    let colCode    = findExact(['code article','code art','ref','sku']) >= 0 ? findExact(['code article','code art','ref','sku']) : findCol(['code']);
+    let colArticle = findExact(['article','designation','désignation','libellé','libelle']) >= 0 ? findExact(['article','designation','désignation','libellé','libelle']) : findCol(['designation','désignation','libelle']);
+    if (colArticle === colCode) colArticle = colCode + 1; // éviter collision
+    let colQty     = findExact(['nb colis','quantité','qte']) >= 0 ? findExact(['nb colis','quantité','qte']) : findCol(['nb colis','quantit','qté','qty','colis']);
 
     // Si pas de col equipe dans headers, chercher dans le contenu
     if(colEquipe < 0) {
