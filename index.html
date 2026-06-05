@@ -568,7 +568,11 @@ async function renderStockList(){
       div.querySelector('.del-btn').addEventListener('click', (e) => window.deleteStock(sid, e));
       return div.outerHTML || '';
     };
-        list.innerHTML = html;
+    let html = '<div style="font-size:12px;font-weight:700;color:#92710a;text-transform:uppercase;letter-spacing:.05em;padding:6px 0 8px;display:flex;align-items:center;gap:6px">🌿 GMS</div>';
+    stocks.forEach(s => { html += makeItem(s, 'GMS'); });
+    html += '<div style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.05em;padding:16px 0 8px;margin-top:8px;border-top:1.5px solid var(--gray-light);display:flex;align-items:center;gap:6px">✨ Prestige</div>';
+    stocks.forEach(s => { html += makeItem(s, 'PRESTIGE'); });
+    list.innerHTML = html;
   }catch(e){console.error('renderStockList error:', e); list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur: '+e.message+'</div>';}
 }
 
