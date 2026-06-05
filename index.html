@@ -480,71 +480,47 @@ function readFile(file) {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const rows = json.slice(1).filter(r => r.some(c => c !== ''));
-    // Détection intelligente des colonnes
-    // On analyse les headers (première ligne) et le contenu pour identifier chaque colonne
-    const headers = json[0] ? json[0].map(h => String(h||'').toLowerCase().trim()) : [];
+    // Détection intelligente basée sur les headers
+    const hdrs = (json[0] || []).map(h => String(h||'').toLowerCase().trim());
+    const findCol = (kws) => { for(const kw of kws){ const i=hdrs.findIndex(h=>h.includes(kw)); if(i>=0) return i; } return -1; };
+    const isNumCol = (ci) => { const v=rows.slice(0,15).map(r=>r[ci]).filter(v=>v!==''&&v!=null); return v.length>0 && v.filter(v=>!isNaN(parseFloat(v))).length/v.length>0.6; };
 
-    // Cherche une colonne par ses noms possibles dans les headers
-    const findCol = (keywords) => {
-      for (const kw of keywords) {
-        const i = headers.findIndex(h => h.includes(kw));
-        if (i >= 0) return i;
-      }
-      return -1;
-    };
+    let colEquipe  = findCol(['gms','equipe','équipe','acheteur','lot']);
+    let colFamille = findCol(['famille']);
+    let colCode    = findCol(['code article','code art','référence','ref','sku','code']);
+    let colArticle = findCol(['article','designation','désignation','libelle','libellé','nom produit']);
+    let colQty     = findCol(['nb colis','quantit','qté','qty','colis']);
 
-    // Détecte si une colonne contient principalement des nombres
-    const isNumericCol = (colIdx) => {
-      const vals = rows.slice(0,20).map(r => r[colIdx]).filter(v => v !== '' && v !== null && v !== undefined);
-      if (!vals.length) return false;
-      return vals.filter(v => !isNaN(parseFloat(v))).length / vals.length > 0.7;
-    };
-
-    // Détecte si une colonne contient GMS/vide (colonne équipe)
-    const isEquipeCol = (colIdx) => {
-      const vals = rows.slice(0,20).map(r => String(r[colIdx]||'').toUpperCase().trim());
-      return vals.some(v => v === 'GMS');
-    };
-
-    // Trouve les colonnes par header d'abord
-    let colEquipe = findCol(['gms', 'equipe', 'équipe', 'team']);
-    let colFamille = findCol(['famille', 'family', 'categ', 'rayon', 'type']);
-    let colCode = findCol(['code', 'ref', 'sku', 'id article', 'code article']);
-    let colArticle = findCol(['article', 'designation', 'désignation', 'libelle', 'libellé', 'nom', 'produit', 'description']);
-    let colQty = findCol(['nb colis', 'quantit', 'qté', 'qty', 'stock', 'colis', 'nb']);
-
-    // Si pas trouvé par header, détecte par contenu
-    if (colEquipe < 0) {
-      for (let i = 0; i < (headers.length || 6); i++) {
-        if (isEquipeCol(i)) { colEquipe = i; break; }
+    // Si pas de col equipe dans headers, chercher dans le contenu
+    if(colEquipe < 0) {
+      for(let i=0;i<(hdrs.length||8);i++){
+        const vals = rows.slice(0,20).map(r=>String(r[i]||'').toUpperCase().trim());
+        if(vals.some(v=>v==='GMS')){colEquipe=i;break;}
       }
     }
 
-    // Fallback : si toujours pas trouvé, utilise la logique positionnelle
-    const ncols = rows[0] ? rows[0].length : 6;
-    if (colEquipe < 0 && ncols >= 4) colEquipe = -1; // pas de col équipe
-    if (colFamille < 0) colFamille = colEquipe >= 0 ? colEquipe + 1 : 0;
-    if (colCode < 0) colCode = colFamille + 1;
-    if (colArticle < 0) colArticle = colCode + 1;
-    if (colQty < 0) {
-      // Cherche la première colonne numérique après colArticle
-      for (let i = colArticle + 1; i < ncols; i++) {
-        if (isNumericCol(i)) { colQty = i; break; }
-      }
-      if (colQty < 0) colQty = colArticle + 1;
-    }
+    // Fallback positionnel selon nombre de colonnes
+    const nc = rows[0]?rows[0].length:6;
+    if(nc >= 6 && colFamille<0) colFamille=1;
+    if(nc >= 6 && colCode<0) colCode=2;
+    if(nc >= 6 && colArticle<0) colArticle=3;
+    if(nc >= 6 && colQty<0) colQty=5;
+    if(nc < 6 && colFamille<0) colFamille=0;
+    if(nc < 6 && colCode<0) colCode=1;
+    if(nc < 6 && colArticle<0) colArticle=2;
+    if(nc < 6 && colQty<0) { for(let i=colArticle+1;i<nc;i++){if(isNumCol(i)){colQty=i;break;}} }
 
-    console.log('Colonnes détectées:', {colEquipe, colFamille, colCode, colArticle, colQty});
+    console.log('Colonnes:', {colEquipe,colFamille,colCode,colArticle,colQty});
 
-    allArticles = rows.map((r, i) => ({
-      id: i + 1,
-      equipe: colEquipe >= 0 ? (String(r[colEquipe]||'').toUpperCase().trim() === 'GMS' ? 'GMS' : 'PRESTIGE') : 'PRESTIGE',
+    allArticles = rows.map((r,i) => ({
+      id: i+1,
+      equipe: colEquipe>=0 ? (String(r[colEquipe]||'').toUpperCase().trim()==='GMS'?'GMS':'PRESTIGE') : 'PRESTIGE',
       famille: String(r[colFamille]||''),
-      code: String(r[colCode]||''),
+      code: colCode>=0 ? String(r[colCode]||'') : '',
       article: String(r[colArticle]||''),
-      nb_colis: parseInt(r[colQty]) || 0,
-      compte: null, compte1: null, compte2: null, compte3: null, detruire: null
-    })).filter(a => a.article && a.article.length > 1);
+      nb_colis: colQty>=0 ? (parseInt(r[colQty])||0) : 0,
+      compte: null, compte1:null, compte2:null, compte3:null, detruire:null
+    })).filter(a => a.article && a.article.length > 2 && isNaN(a.article) && a.article.toLowerCase() !== 'total' && a.article.toLowerCase() !== 'article');
     document.getElementById('upload-ok').textContent = '✓ ' + file.name + ' — ' + allArticles.length + ' articles chargés';
     dropZone.querySelector('p').textContent = file.name;
     updateHomeCounts();
