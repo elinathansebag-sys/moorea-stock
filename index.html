@@ -449,10 +449,15 @@ function setSyncStatus(s, l) {
 }
 
 function getEquipe(a) {
-  // Excel col A = GMS → toujours GMS
-  if (a.equipe === 'GMS') return 'GMS';
-  // Sinon Firebase override ou Prestige par défaut
-  return assignments[a.code] === 'GMS' ? 'GMS' : 'PRESTIGE';
+  // 1. Cherche dans stock_data.js (source de vérité fixe)
+  if (typeof STOCK_DATA !== 'undefined') {
+    const ref = STOCK_DATA.find(s => s.article === a.article || s.code === a.code);
+    if (ref) return ref.equipe;
+  }
+  // 2. Firebase override manuel (Config page)
+  if (assignments[a.code]) return assignments[a.code];
+  // 3. Valeur dans l'objet
+  return a.equipe || 'PRESTIGE';
 }
 
 function toast(msg) {
