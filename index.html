@@ -1277,19 +1277,21 @@ window.toggleAssignment = async function(code, current) {
 
 function renderConfig() {
   const q = document.getElementById('cfg-srch').value.toLowerCase();
-  // Config always uses STOCK_DATA as source of truth
-  const source = (typeof STOCK_DATA !== 'undefined' && STOCK_DATA.length) ? STOCK_DATA : allArticles;
-  let rows = source.filter(a => {
+  if (typeof STOCK_DATA === 'undefined' || !STOCK_DATA.length) {
+    document.getElementById('cfg-body').innerHTML = '<tr><td colspan="2" class="empty-state"><i class="ti ti-loader"></i>Chargement...</td></tr>';
+    return;
+  }
+  let rows = STOCK_DATA.filter(a => {
     if (q && !a.article.toLowerCase().includes(q)) return false;
-    const eq = getEquipe(a);
-    if (cfFilter === 'GMS' && eq !== 'GMS') return false;
-    if (cfFilter === 'PRESTIGE' && eq !== 'PRESTIGE') return false;
+    if (cfFilter === 'GMS' && a.equipe !== 'GMS') return false;
+    if (cfFilter === 'PRESTIGE' && a.equipe !== 'PRESTIGE') return false;
     return true;
   });
   if (!rows.length) { document.getElementById('cfg-body').innerHTML = '<tr><td colspan="2" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>'; return; }
   document.getElementById('cfg-body').innerHTML = rows.map(a => {
-    const eq = getEquipe(a);
-    return '<tr><td style="font-weight:500">' + a.article + '</td><td><div class="toggle-wrap"><button class="toggle-btn' + (eq === 'GMS' ? ' gms-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">GMS</button><button class="toggle-btn' + (eq === 'PRESTIGE' ? ' prestige-on' : '') + '" onclick="window.toggleAssignment(\'' + a.code + '\',\'' + eq + '\')">Prestige</button></div></td></tr>';
+    const eq = a.equipe;
+    return '<tr><td style="font-weight:500">' + a.article + '<br><span style="font-size:11px;color:var(--gray)">' + a.famille + '</span></td>' +
+      '<td><span class="badge ' + (eq === 'GMS' ? 'badge-surplus' : 'badge-nc') + '" style="font-size:12px">' + eq + '</span></td></tr>';
   }).join('');
 }
 
