@@ -1277,8 +1277,10 @@ window.toggleAssignment = async function(code, current) {
 
 function renderConfig() {
   const q = document.getElementById('cfg-srch').value.toLowerCase();
-  let rows = allArticles.filter(a => {
-    if (q && !a.article.toLowerCase().includes(q) && !a.code.toLowerCase().includes(q)) return false;
+  // Config always uses STOCK_DATA as source of truth
+  const source = (typeof STOCK_DATA !== 'undefined' && STOCK_DATA.length) ? STOCK_DATA : allArticles;
+  let rows = source.filter(a => {
+    if (q && !a.article.toLowerCase().includes(q)) return false;
     const eq = getEquipe(a);
     if (cfFilter === 'GMS' && eq !== 'GMS') return false;
     if (cfFilter === 'PRESTIGE' && eq !== 'PRESTIGE') return false;
