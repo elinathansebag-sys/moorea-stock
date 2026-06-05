@@ -704,9 +704,14 @@ window.printStockPDF=async function(sid,team){
     const thead='<tr style="background:#f5f3ee"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Article</th><th style="padding:6px 10px;text-align:center;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Lots</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Stock</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Compté</th><th style="padding:6px 10px;text-align:center;font-size:11px;color:#dc2626;border-bottom:2px solid #c8a84b">Détruire</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Écart</th></tr>';
     const row=(a,hl)=>{
       const e=ecart(a); const sign=e>0?'+':''; const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';
-      const lotsStr=(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0)?Object.entries(a.lotsQty).map(([l,q])=>l+':'+q).join(' · '):((a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||''));
+      let lotsStr='';
+      if(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0){
+        lotsStr=Object.entries(a.lotsQty).map(([l,q])=>'lot '+l+' · '+q+' col.').join('<br>');
+      } else if(a.lots&&a.lots.length){
+        lotsStr=a.lots.map(l=>'lot '+l).join('<br>');
+      }
       const c=getCompte(a); const cd=getDetruire(a);
-      return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0">'+lotsStr+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(c!==null?c:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(cd||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==null?sign+e:'—')+'</td></tr>';
+      return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+(lotsStr?'<div style="margin-top:3px;font-size:10px;color:#6b7280">'+lotsStr+'</div>':'')+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0"><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(c!==null?c:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(cd||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==null?sign+e:'—')+'</td></tr>';
     };
     const section=(title,color,arr,hl)=>arr.length?'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+color+';padding:12px 0 6px">'+title+' ('+arr.length+')</div><table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+arr.map(a=>row(a,hl)).join('')+'</tbody></table>':'';
     
@@ -963,9 +968,15 @@ function renderEcarts(){
     const e=ecart(a),sign=e>0?'+':'';
     const cls=e>0?'ep':e<0?'en':'ez';
     const badge=e===0?'<span class="badge badge-ok">OK</span>':e>0?'<span class="badge badge-surplus">Surplus</span>':'<span class="badge badge-manque">Manque</span>';
-    const lotsStr=(a.lots&&a.lots.length)?a.lots.join(' '):(a.lot?'…'+a.lot:'');
-    const lotBadge=(e!==0&&lotsStr)?'<span style="font-size:10px;background:var(--cream);border:1px solid var(--gray-light);border-radius:5px;padding:1px 5px;color:var(--gray);margin-left:5px">lots '+lotsStr+'</span>':'';
-    return '<tr><td style="font-weight:500">'+a.article+lotBadge+'</td><td style="text-align:right">'+a.nb_colis+'</td><td style="text-align:right;font-weight:700">'+a.compte+'</td><td class="'+cls+'" style="text-align:right">'+sign+e+'</td><td>'+badge+'</td></tr>';
+    let lotsHtml='';
+    if(e!==0){
+      if(a.lotsQty&&Object.keys(a.lotsQty).length>0){
+        lotsHtml='<div style="margin-top:4px">'+Object.entries(a.lotsQty).map(([l,q])=>'<span style="display:inline-block;margin-right:10px;font-size:10px;color:var(--gray)">lot '+l+' · '+q+' col.</span>').join('')+'</div>';
+      } else if(a.lots&&a.lots.length){
+        lotsHtml='<div style="margin-top:4px">'+a.lots.map(l=>'<span style="display:inline-block;margin-right:10px;font-size:10px;color:var(--gray)">lot '+l+'</span>').join('')+'</div>';
+      }
+    }
+    return '<tr><td style="font-weight:500">'+a.article+lotsHtml+'</td><td style="text-align:right">'+a.nb_colis+'</td><td style="text-align:right;font-weight:700">'+a.compte+'</td><td class="'+cls+'" style="text-align:right">'+sign+e+'</td><td>'+badge+'</td></tr>';
   }).join('');
 }
 
@@ -987,7 +998,12 @@ window.exportPDF=function(){
   const ok=articles.filter(a=>counted(a)&&ecart(a)===0&&(!a.detruire||a.detruire===0));
   const nc=articles.filter(a=>!counted(a));
   const thead='<tr style="background:#f5f3ee"><th style="padding:7px 10px;text-align:left;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Article</th><th style="padding:7px 10px;text-align:center;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Lots</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Stock</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Compté</th><th style="padding:7px 10px;text-align:center;font-size:11px;color:#dc2626;border-bottom:2px solid #c8a84b">Détruire</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Écart</th></tr>';
-  const row=(a,hl)=>{const e=counted(a)?ecart(a):'';const sign=e>0?'+':'';const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';const lotsStr=(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0)?Object.entries(a.lotsQty).map(([l,q])=>l+':'+q).join(' · '):((a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||''));return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+(a.comment?'<br><span style="font-size:10px;color:#6b7280;font-style:italic">'+a.comment+'</span>':'')+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0">'+lotsStr+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(counted(a)?a.compte:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(a.detruire||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==''?sign+e:'—')+'</td></tr>';};
+  const row=(a,hl)=>{const e=counted(a)?ecart(a):'';const sign=e>0?'+':'';const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';let lotsStr='';
+      if(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0){
+        lotsStr=Object.entries(a.lotsQty).map(([l,q])=>'lot '+l+' · '+q+' col.').join('<br>');
+      } else if(a.lots&&a.lots.length){
+        lotsStr=a.lots.map(l=>'lot '+l).join('<br>');
+      }const lotsSubLine=lotsStr?'<div style="margin-top:3px;font-size:10px;color:#6b7280">'+lotsStr+'</div>':'';return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+(a.comment?'<br><span style="font-size:10px;color:#6b7280;font-style:italic">'+a.comment+'</span>':'')+lotsSubLine+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0"><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(counted(a)?a.compte:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(a.detruire||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==''?sign+e:'—')+'</td></tr>';};
   const section=(title,color,arr,hl)=>arr.length?'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+color+';padding:12px 0 6px">'+title+' ('+arr.length+')</div><table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+arr.map(a=>row(a,hl)).join('')+'</tbody></table>':'';
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventaire '+currentTeam+'</title><style>body{font-family:-apple-system,sans-serif;margin:0;padding:20px;color:#1a1a18}h1{font-size:17px;font-weight:700;color:#c8a84b;margin:0}.sub{font-size:12px;color:#6b7280;margin:3px 0 18px}@media print{body{padding:10px}}</style></head><body>'+
     '<h1>🌿 Moorea · Inventaire '+currentTeam+'</h1><div class="sub">'+now+' · '+articles.length+' articles</div>'+
