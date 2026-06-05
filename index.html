@@ -548,10 +548,8 @@ async function renderStockList(){
       const total = team==='GMS' ? (s.gms||0) : (s.prestige||0);
       const pct = total ? Math.round(done/total*100) : 0;
       const color = team==='GMS' ? '#92710a' : '#7c3aed';
-      const sid = s.id;
-      const div = document.createElement('div');
-      div.className = 'stock-item';
-      div.innerHTML = 
+      const sid = s.id.replace(/'/g,"\'");
+      return '<div class="stock-item">'+
         '<div style="flex:1">'+
           '<div style="font-size:13px;font-weight:700">📅 '+s.dateLabel+'</div>'+
           '<div style="font-size:12px;color:var(--gray);margin-top:2px">'+s.filename+' · '+total+' articles</div>'+
@@ -561,12 +559,10 @@ async function renderStockList(){
           '<div style="font-size:11px;color:var(--gray);margin-top:3px">'+done+'/'+total+' · '+pct+'%</div>'+
         '</div>'+
         '<div class="stock-actions">'+
-          '<button class="btn btn-sm btn-gold compter-btn" data-id="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>'+
-          '<button class="btn btn-sm btn-danger del-btn" data-id="'+sid+'"><i class="ti ti-trash"></i></button>'+
-        '</div>';
-      div.querySelector('.compter-btn').addEventListener('click', () => window.recompterDepuis(sid, team));
-      div.querySelector('.del-btn').addEventListener('click', (e) => window.deleteStock(sid, e));
-      return div.outerHTML || '';
+          '<button class="btn btn-sm btn-gold" onclick="window.recompterDepuis(this.dataset.sid,this.dataset.team)" data-sid="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>'+
+          '<button class="btn btn-sm btn-danger" onclick="window.deleteStock(this.dataset.sid,event)" data-sid="'+sid+'"><i class="ti ti-trash"></i></button>'+
+        '</div>'+
+      '</div>';
     };
     let html = '<div style="font-size:12px;font-weight:700;color:#92710a;text-transform:uppercase;letter-spacing:.05em;padding:6px 0 8px;display:flex;align-items:center;gap:6px">🌿 GMS</div>';
     stocks.forEach(s => { html += makeItem(s, 'GMS'); });
@@ -576,7 +572,7 @@ async function renderStockList(){
   }catch(e){console.error('renderStockList error:', e); list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur: '+e.message+'</div>';}
 }
 
-window.recompterDepuis=async function(stockId, team){
+window.recompterDepuis=async function(stockId,team){
   setSyncStatus('loading','Chargement...');
   try{
     const snap=await getDoc(doc(db,'stocks',stockId));
