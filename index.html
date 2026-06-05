@@ -157,10 +157,28 @@ tr:hover td{background:#faf9f6}
 .fusion-mode .cfg-row{cursor:pointer}
 .cfg-row.selected{background:#fffbf0;border-left:3px solid var(--gold)}
 .fusion-bar{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:12px;z-index:200;white-space:nowrap}
+
+@media print {
+  #pdf-overlay > div:first-child { display: none !important; }
+  #pdf-overlay { position: static !important; }
+  body > *:not(#pdf-overlay) { display: none !important; }
+}
 </style>
 </head>
 <body>
 
+
+
+<div id="pdf-overlay" style="display:none;position:fixed;inset:0;background:#f5f3ee;z-index:800;overflow-y:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--dark);position:sticky;top:0;z-index:1">
+    <span style="color:var(--gold);font-weight:700;font-size:14px">📄 Rapport PDF</span>
+    <div style="display:flex;gap:8px">
+      <button onclick="window.print()" style="background:var(--gold);color:var(--dark);border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit"><i class="ti ti-printer"></i> Imprimer</button>
+      <button onclick="closePDFOverlay()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit"><i class="ti ti-x"></i> Fermer</button>
+    </div>
+  </div>
+  <div id="pdf-content" style="max-width:900px;margin:0 auto;padding:24px 20px;background:#fff;min-height:100vh"></div>
+</div>
 
 <div id="login-screen" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:24px">
   <img src="/icon.png" style="width:100px;height:100px;border-radius:24px"/>
@@ -702,9 +720,26 @@ window.printStockPDF=async function(sid,team){
       section('⚡ Non comptes','#6b7280',nc,false)+
       section('✓ Articles OK','#15803d',ok,false)+
       '</body></html>';
-    const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>win.print(),500);
+    showPDFOverlay(html);
   }catch(e){toast('Erreur PDF');console.error(e);}
 };
+
+
+window.closePDFOverlay = function() {
+  document.getElementById('pdf-overlay').style.display = 'none';
+  document.getElementById('pdf-content').innerHTML = '';
+};
+
+function showPDFOverlay(html) {
+  // Extract body content from html string
+  const b1 = html.indexOf('<body');
+  const b2 = html.indexOf('>', b1) + 1;
+  const b3 = html.lastIndexOf('</body>');
+  const bodyContent = (b1 >= 0 && b3 >= 0) ? html.slice(b2, b3) : html;
+  document.getElementById('pdf-content').innerHTML = bodyContent;
+  document.getElementById('pdf-overlay').style.display = 'block';
+  document.getElementById('pdf-overlay').scrollTop = 0;
+}
 
 window.cloturerStock=async function(sid,e){
   e.stopPropagation();
@@ -963,7 +998,7 @@ window.exportPDF=function(){
     section('⚡ Non comptés','#6b7280',nc,false)+
     section('✓ Articles OK','#15803d',ok,false)+
     '</body></html>';
-  const win=window.open('','_blank');win.document.write(html);win.document.close();setTimeout(()=>win.print(),500);
+  showPDFOverlay(html);
 };
 
 // ── CONFIG ──
