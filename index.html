@@ -503,6 +503,13 @@ function readFile(file){
     await saveStock(file.name, allArticles);
     document.getElementById('upload-status').textContent='✓ '+file.name+' — '+allArticles.length+' articles enregistrés';
     document.getElementById('file-input').value='';
+    // Ouvrir modal choix équipe
+    const gms=allArticles.filter(a=>getEquipe(a)==='GMS').length;
+    const pres=allArticles.filter(a=>getEquipe(a)==='PRESTIGE').length;
+    document.getElementById('modal-stock-info').textContent=file.name+' · '+allArticles.length+' articles · '+gms+' GMS · '+pres+' Prestige';
+    document.getElementById('modal-gms-count').textContent=gms+' articles';
+    document.getElementById('modal-prestige-count').textContent=pres+' articles';
+    document.getElementById('modal-team').classList.add('open');
     renderStockList();
     toast(allArticles.length+' articles importés');
   };
@@ -512,8 +519,18 @@ function readFile(file){
 // ── MODAL EQUIPE ──
 window.closeModalTeam=function(){document.getElementById('modal-team').classList.remove('open');};
 
-window.startSession=function(team){
+window.startSession=async function(team){
   document.getElementById('modal-team').classList.remove('open');
+  // Save team choice to Firebase stock document
+  if(currentImportId){
+    try{
+      const snap=await getDoc(doc(db,'stocks',currentImportId));
+      if(snap.exists()){
+        await setDoc(doc(db,'stocks',currentImportId),{...snap.data(),team},{ merge:true });
+      }
+    }catch(e){}
+  }
+  renderStockList();
   launchSession(team);
 };
 
@@ -564,10 +581,14 @@ async function renderStockList(){
         '</div>'+
       '</div>';
     };
+    const gmsStocks = stocks.filter(s => s.team === 'GMS' || !s.team);
+    const presStocks = stocks.filter(s => s.team === 'PRESTIGE');
     let html = '<div style="font-size:12px;font-weight:700;color:#92710a;text-transform:uppercase;letter-spacing:.05em;padding:6px 0 8px;display:flex;align-items:center;gap:6px">🌿 GMS</div>';
-    stocks.forEach(s => { html += makeItem(s, 'GMS'); });
+    if(gmsStocks.length) gmsStocks.forEach(s => { html += makeItem(s, 'GMS'); });
+    else html += '<div style="font-size:13px;color:var(--gray);padding:10px 0">Aucun stock GMS</div>';
     html += '<div style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.05em;padding:16px 0 8px;margin-top:8px;border-top:1.5px solid var(--gray-light);display:flex;align-items:center;gap:6px">✨ Prestige</div>';
-    stocks.forEach(s => { html += makeItem(s, 'PRESTIGE'); });
+    if(presStocks.length) presStocks.forEach(s => { html += makeItem(s, 'PRESTIGE'); });
+    else html += '<div style="font-size:13px;color:var(--gray);padding:10px 0">Aucun stock Prestige</div>';
     list.innerHTML = html;
   }catch(e){console.error('renderStockList error:', e); list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur: '+e.message+'</div>';}
 }
