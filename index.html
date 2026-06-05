@@ -520,17 +520,21 @@ function readFile(file){
       if(colCode>=0&&art===String(r[colCode]||'').trim()) return;
       const qty=parseInt(r[colQty])||0;
       if(qty<0) return;
-      const lot=r[0]?String(r[0]).slice(-4):'';
+      const lotFull=r[0]?String(r[0]).trim():'';
+      const lot=lotFull?lotFull.slice(-4):'';
       const fam=colFamille>=0?String(r[colFamille]||'').trim():'';
-      if(!grouped[art]) grouped[art]={article:art,famille:fam,nb_colis:0,lots:[]};
+      if(!grouped[art]) grouped[art]={article:art,famille:fam,nb_colis:0,lots:[],lotsQty:{}};
       grouped[art].nb_colis+=qty;
-      if(lot&&!grouped[art].lots.includes(lot)) grouped[art].lots.push(lot);
+      if(lot){
+        if(!grouped[art].lots.includes(lot)) grouped[art].lots.push(lot);
+        grouped[art].lotsQty[lot]=(grouped[art].lotsQty[lot]||0)+qty;
+      }
     });
     
     allArticles=Object.values(grouped).map((a,i)=>({
       id:i+1, equipe:'PRESTIGE', famille:a.famille, code:'',
       article:a.article, nb_colis:a.nb_colis,
-      lots:a.lots, lot:a.lots.join(', '),
+      lots:a.lots, lot:a.lots.join(' '), lotsQty:a.lotsQty||{},
       compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null
     }));
     
@@ -636,7 +640,7 @@ window.recompterDepuis=async function(stockId,team){
     const snap=await getDoc(doc(db,'stocks',stockId));
     if(snap.exists()){
       const data=snap.data();
-      allArticles=data.articles.map(a=>({...a,lots:a.lots||[],lot:a.lot||'',compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
+      allArticles=data.articles.map(a=>({...a,lots:a.lots||[],lot:a.lot||'',lotsQty:a.lotsQty||{},compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
       currentImportId=stockId;
       setSyncStatus('ok','Synchronisé');
       if(team){
@@ -682,7 +686,7 @@ window.printStockPDF=async function(sid,team){
     const thead='<tr style="background:#f5f3ee"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Article</th><th style="padding:6px 10px;text-align:center;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Lots</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Stock</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Compté</th><th style="padding:6px 10px;text-align:center;font-size:11px;color:#dc2626;border-bottom:2px solid #c8a84b">Détruire</th><th style="padding:6px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Écart</th></tr>';
     const row=(a,hl)=>{
       const e=ecart(a); const sign=e>0?'+':''; const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';
-      const lotsStr=(a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||'');
+      const lotsStr=(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0)?Object.entries(a.lotsQty).map(([l,q])=>l+':'+q).join(' · '):((a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||''));
       const c=getCompte(a); const cd=getDetruire(a);
       return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0">'+lotsStr+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(c!==null?c:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(cd||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==null?sign+e:'—')+'</td></tr>';
     };
@@ -948,7 +952,7 @@ window.exportPDF=function(){
   const ok=articles.filter(a=>counted(a)&&ecart(a)===0&&(!a.detruire||a.detruire===0));
   const nc=articles.filter(a=>!counted(a));
   const thead='<tr style="background:#f5f3ee"><th style="padding:7px 10px;text-align:left;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Article</th><th style="padding:7px 10px;text-align:center;font-size:11px;color:#6b7280;border-bottom:2px solid #c8a84b">Lots</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Stock</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Compté</th><th style="padding:7px 10px;text-align:center;font-size:11px;color:#dc2626;border-bottom:2px solid #c8a84b">Détruire</th><th style="padding:7px 10px;text-align:center;font-size:11px;border-bottom:2px solid #c8a84b">Écart</th></tr>';
-  const row=(a,hl)=>{const e=counted(a)?ecart(a):'';const sign=e>0?'+':'';const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';const lotsStr=(a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||'');return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+(a.comment?'<br><span style="font-size:10px;color:#6b7280;font-style:italic">'+a.comment+'</span>':'')+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0">'+lotsStr+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(counted(a)?a.compte:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(a.detruire||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==''?sign+e:'—')+'</td></tr>';};
+  const row=(a,hl)=>{const e=counted(a)?ecart(a):'';const sign=e>0?'+':'';const ec=e<0?'#dc2626':e>0?'#b45309':'#15803d';const lotsStr=(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0)?Object.entries(a.lotsQty).map(([l,q])=>l+':'+q).join(' · '):((a.lots&&a.lots.length)?a.lots.join(' '):(a.lot||''));return '<tr style="'+(hl?'background:#fff5f5':'')+'"><td style="padding:5px 10px;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.article+(a.comment?'<br><span style="font-size:10px;color:#6b7280;font-style:italic">'+a.comment+'</span>':'')+'</td><td style="padding:5px 10px;font-size:10px;color:#6b7280;text-align:center;border-bottom:1px solid #e8e0d0">'+lotsStr+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;border-bottom:1px solid #e8e0d0">'+a.nb_colis+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid #e8e0d0">'+(counted(a)?a.compte:'—')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;color:#dc2626;border-bottom:1px solid #e8e0d0">'+(a.detruire||'')+'</td><td style="padding:5px 10px;text-align:center;font-size:12px;font-weight:700;color:'+ec+';border-bottom:1px solid #e8e0d0">'+(e!==''?sign+e:'—')+'</td></tr>';};
   const section=(title,color,arr,hl)=>arr.length?'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+color+';padding:12px 0 6px">'+title+' ('+arr.length+')</div><table style="width:100%;border-collapse:collapse"><thead>'+thead+'</thead><tbody>'+arr.map(a=>row(a,hl)).join('')+'</tbody></table>':'';
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventaire '+currentTeam+'</title><style>body{font-family:-apple-system,sans-serif;margin:0;padding:20px;color:#1a1a18}h1{font-size:17px;font-weight:700;color:#c8a84b;margin:0}.sub{font-size:12px;color:#6b7280;margin:3px 0 18px}@media print{body{padding:10px}}</style></head><body>'+
     '<h1>🌿 Moorea · Inventaire '+currentTeam+'</h1><div class="sub">'+now+' · '+articles.length+' articles</div>'+
