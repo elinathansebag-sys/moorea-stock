@@ -448,15 +448,41 @@ function setSyncStatus(s, l) {
   document.getElementById('sync-label').textContent = l;
 }
 
+// Build lookup maps from STOCK_DATA once
+let _stockByArticle = null;
+let _stockByCode = null;
+function buildStockLookup() {
+  if (_stockByArticle || typeof STOCK_DATA === 'undefined') return;
+  _stockByArticle = {};
+  _stockByCode = {};
+  STOCK_DATA.forEach(s => {
+    _stockByArticle[s.article.toLowerCase().trim()] = s.equipe;
+    if (s.code) _stockByCode[s.code.toLowerCase().trim()] = s.equipe;
+  });
+}
+
 function getEquipe(a) {
-  // 1. Cherche dans stock_data.js (source de vérité fixe)
-  if (typeof STOCK_DATA !== 'undefined') {
-    const ref = STOCK_DATA.find(s => s.article === a.article || s.code === a.code);
-    if (ref) return ref.equipe;
+  buildStockLookup();
+  // 1. Match exact par code
+  if (_stockByCode && a.code) {
+    const eq = _stockByCode[a.code.toLowerCase().trim()];
+    if (eq) return eq;
   }
-  // 2. Firebase override manuel (Config page)
+  // 2. Match exact par nom d'article
+  if (_stockByArticle && a.article) {
+    const eq = _stockByArticle[a.article.toLowerCase().trim()];
+    if (eq) return eq;
+  }
+  // 3. Match partiel par nom (le nom du stock peut être dans STOCK_DATA ou vice versa)
+  if (_stockByArticle && a.article) {
+    const art = a.article.toLowerCase().trim();
+    for (const [key, eq] of Object.entries(_stockByArticle)) {
+      if (art.includes(key) || key.includes(art)) return eq;
+    }
+  }
+  // 4. Firebase override
   if (assignments[a.code]) return assignments[a.code];
-  // 3. Valeur dans l'objet
+  // 5. Défaut
   return a.equipe || 'PRESTIGE';
 }
 
