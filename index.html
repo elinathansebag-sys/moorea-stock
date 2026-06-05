@@ -569,7 +569,7 @@ async function renderStockList(){
       return div.outerHTML || '';
     };
         list.innerHTML = html;
-  }catch(e){list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur</div>';}
+  }catch(e){console.error('renderStockList error:', e); list.innerHTML='<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur: '+e.message+'</div>';}
 }
 
 window.recompterDepuis=async function(stockId, team){
