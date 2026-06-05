@@ -305,6 +305,19 @@ tr:hover td{background:#faf9f6}
 <!-- PAGE CONFIG -->
 <div id="page-config" style="display:none">
   <div class="section-title"><i class="ti ti-settings"></i> Répartition GMS / Prestige</div>
+
+  <!-- PIN screen -->
+  <div id="config-pin-screen" style="text-align:center;padding:3rem 1rem">
+    <i class="ti ti-lock" style="font-size:40px;color:var(--gold);display:block;margin-bottom:16px"></i>
+    <p style="font-size:14px;color:var(--gray);margin-bottom:1.25rem">Entrez le code pour modifier les attributions</p>
+    <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
+      <input type="password" id="config-pin-input" maxlength="4" placeholder="••••" style="width:100px;padding:10px;text-align:center;font-size:20px;border:1.5px solid var(--gray-light);border-radius:10px;font-family:inherit;outline:none;letter-spacing:6px" oninput="checkConfigPin(this.value)" />
+    </div>
+    <div id="config-pin-error" style="font-size:12px;color:#dc2626;margin-top:8px;min-height:18px"></div>
+  </div>
+
+  <!-- Config content (hidden until PIN) -->
+  <div id="config-content" style="display:none">
   <p style="font-size:13px;color:var(--gray);margin-bottom:1.25rem">Liste fixe des articles et leur équipe. Basée sur le fichier de référence.</p>
   <div class="card">
     <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
@@ -321,6 +334,7 @@ tr:hover td{background:#faf9f6}
       </table>
     </div>
   </div>
+  </div><!-- /config-content -->
 </div>
 
 </div><!-- /app -->
@@ -450,7 +464,15 @@ window.showPage = function(p){
   if(fab) fab.classList.toggle('visible',p==='comptage');
   if(p==='home') renderStockList();
   if(p==='ecarts'){updateMetricsE();renderEcarts();}
-  if(p==='config') renderConfig();
+  if(p==='config'){
+    if(!configUnlocked){
+      document.getElementById('config-pin-screen').style.display='block';
+      document.getElementById('config-content').style.display='none';
+      document.getElementById('config-pin-input').value='';
+      document.getElementById('config-pin-error').textContent='';
+    }
+    renderConfig();
+  }
 };
 
 // ── FIREBASE ──
@@ -1067,6 +1089,25 @@ window.annulerFusion = function() {
   document.getElementById('btn-fusion-mode').style.color = '';
   document.getElementById('fusion-bar').style.display = 'none';
   renderConfig();
+};
+
+
+const CONFIG_PIN = '1709';
+let configUnlocked = false;
+
+window.checkConfigPin = function(val) {
+  if (val.length === 4) {
+    if (val === CONFIG_PIN) {
+      configUnlocked = true;
+      document.getElementById('config-pin-screen').style.display = 'none';
+      document.getElementById('config-content').style.display = 'block';
+      document.getElementById('config-pin-error').textContent = '';
+      renderConfig();
+    } else {
+      document.getElementById('config-pin-error').textContent = 'Code incorrect';
+      document.getElementById('config-pin-input').value = '';
+    }
+  }
 };
 
 window.setCF=function(f){
