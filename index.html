@@ -628,7 +628,7 @@ window.startSession=async function(team){
 
 function launchSession(team){
   currentTeam=team;
-  articles=allArticles.filter(a=>getEquipe(a)===team).map(a=>({...a,compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
+  articles=allArticles.filter(a=>(a.equipe===team||getEquipe(a)===team)).map(a=>({...a,compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
   ecartFilter='tous';
   document.getElementById('comptage-title').textContent='Comptage '+team;
   document.getElementById('ecarts-title').textContent='Écarts '+team;
@@ -693,7 +693,7 @@ window.recompterDepuis=async function(stockId,team){
     const snap=await getDoc(doc(db,'stocks',stockId));
     if(snap.exists()){
       const data=snap.data();
-      allArticles=data.articles.map(a=>({...a,lots:a.lots||[],lot:a.lot||'',lotsQty:a.lotsQty||{},compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
+      allArticles=data.articles.map(a=>({...a,lots:a.lots||[],lot:a.lot||'',lotsQty:a.lotsQty||{},equipe:a.equipe||getEquipe(a),compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
       currentImportId=stockId;
       setSyncStatus('ok','Synchronisé');
       if(team){
