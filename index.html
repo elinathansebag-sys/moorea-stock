@@ -890,7 +890,7 @@ function renderTable(){
     const destroy='<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="'+qd+'" onchange="window.setCount('+a.id+',9,this.value)">';
     
     html+='<tr data-id="'+a.id+'">'+
-      '<td style="font-weight:500">'+(q?a.article.replace(new RegExp('('+q.split(' ').filter(w=>w).join('|')+')','gi'),'<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">$1</mark>'):a.article)+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
+      '<td style="font-weight:500">'+(()=>{if(!q)return a.article;try{const esc=q.split(' ').filter(w=>w).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));return a.article.replace(new RegExp('('+esc.join('|')+')','gi'),'<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">$1</mark>');}catch(e){return a.article;}})()+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap">'+inp+'</div></td>'+
       '<td style="text-align:center">'+destroy+'</td>'+
       '<td class="tot-cell" style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
