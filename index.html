@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+-<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -251,7 +251,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
     <div class="progress-label"><span>Avancement</span><span id="prog-label">0%</span></div>
     <div class="progress-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input class="search-input" id="srch" placeholder="🔍 Rechercher..." oninput="renderTable()" style="min-width:160px"/>
+      <input class="search-input" id="srch" placeholder="🔍 Rechercher..." oninput="renderTable()" onkeyup="renderTable()" style="min-width:160px"/>
       <button class="btn btn-sm" onclick="resetCounts()"><i class="ti ti-refresh"></i> Réinitialiser</button>
     </div>
   </div>
@@ -861,6 +861,7 @@ function updateMetricsC(){
 function renderTable(){
   const q=document.getElementById('srch').value.toLowerCase();
   const rows=articles.filter(a=>{
+    if(!a||!a.article) return false;
     if(!q) return true;
     const words=q.split(' ').filter(w=>w.length>0);
     const searchStr=(a.article+' '+(a.famille||'')).toLowerCase();
