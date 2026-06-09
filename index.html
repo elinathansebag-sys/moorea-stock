@@ -251,7 +251,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
     <div class="progress-label"><span>Avancement</span><span id="prog-label">0%</span></div>
     <div class="progress-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input class="search-input" id="srch" placeholder="🔍 Rechercher..." oninput="renderTable()" onkeyup="renderTable()" style="min-width:160px"/>
+      <input class="search-input" id="srch" placeholder="🔍 Rechercher..." style="min-width:160px"/>
       <button class="btn btn-sm btn-danger" onclick="resetCounts()" style="opacity:0.5;font-size:11px"><i class="ti ti-refresh"></i> Tout réinitialiser</button>
     </div>
   </div>
@@ -635,7 +635,16 @@ function launchSession(team){
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.add('hidden');
   loadComptages(team).then(()=>{updateMetricsC();renderTable();});
-  loadHistoArticles(); // preload for search
+  loadHistoArticles();
+  // Setup search listener fresh each time
+  const srchEl = document.getElementById('srch');
+  if(srchEl){
+    srchEl.value = '';
+    const newEl = srchEl.cloneNode(true);
+    srchEl.parentNode.replaceChild(newEl, srchEl);
+    newEl.addEventListener('input', () => renderTable());
+    newEl.addEventListener('keyup', () => renderTable());
+  }
   showPage('comptage');
 }
 
@@ -859,13 +868,13 @@ function updateMetricsC(){
 }
 
 function renderTable(){
-  const q=document.getElementById('srch').value.toLowerCase();
-  const rows=articles.filter(a=>{
-    if(!a||!a.article) return false;
+  const srchEl = document.getElementById('srch');
+  const q = srchEl ? srchEl.value.toLowerCase().trim() : '';
+  const rows = articles.filter(a => {
+    if(!a || !a.article) return false;
     if(!q) return true;
-    const words=q.split(' ').filter(w=>w.length>0);
-    const searchStr=(a.article+' '+(a.famille||'')).toLowerCase();
-    return words.every(w=>searchStr.includes(w));
+    const haystack = (a.article + ' ' + (a.famille||'')).toLowerCase();
+    return q.split(/\s+/).filter(Boolean).every(w => haystack.includes(w));
   });
   if(!rows.length){document.getElementById('tbl-body').innerHTML='<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>';return;}
   let html='';
