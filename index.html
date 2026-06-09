@@ -507,6 +507,7 @@ async function saveStock(filename, articles){
 
 async function saveComptages(){
   if(!currentTeam||!currentImportId) return;
+  setSyncStatus('loading','Sauvegarde...');
   const data={};
   articles.forEach(a=>{
     if(counted(a)){
@@ -825,6 +826,8 @@ window.setCount=function(id,loc,val){
 window.addLoc=function(id,loc){
   const a=articles.find(x=>x.id===id);if(!a)return;
   a['compte'+loc]=0;
+  clearTimeout(comptageTimeout);
+  comptageTimeout=setTimeout(saveComptages,1500);
   // Add input next to the + button without full re-render
   const btn=document.querySelector('button.add-loc-btn[onclick*="addLoc('+id+','+loc+')"]');
   if(btn){
@@ -911,6 +914,8 @@ window.moveToOther=function(id){
   const a=articles.find(x=>x.id===id);if(!a)return;
   articles=articles.filter(x=>x.id!==id);
   updateMetricsC();renderTable();
+  clearTimeout(comptageTimeout);
+  comptageTimeout=setTimeout(saveComptages,500);
   toast(a.article+' retiré de la liste');
 };
 
