@@ -172,6 +172,9 @@ tr:hover td{background:#faf9f6}
 .toggle-switch input:checked + .toggle-slider:before{transform:translateX(28px)}
 .toggle-switch.gms input:checked + .toggle-slider{background:var(--gold)}
 .toggle-label{font-size:11px;font-weight:600;color:var(--gray);min-width:52px;text-align:center}
+
+input[type=number]{-webkit-appearance:none;appearance:none}
+input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
 </style>
 </head>
 <body>
@@ -854,7 +857,12 @@ function updateMetricsC(){
 
 function renderTable(){
   const q=document.getElementById('srch').value.toLowerCase();
-  const rows=articles.filter(a=>!q||a.article.toLowerCase().includes(q));
+  const rows=articles.filter(a=>{
+    if(!q) return true;
+    const words=q.split(' ').filter(w=>w.length>0);
+    const searchStr=(a.article+' '+(a.famille||'')).toLowerCase();
+    return words.every(w=>searchStr.includes(w));
+  });
   if(!rows.length){document.getElementById('tbl-body').innerHTML='<tr><td colspan="4" class="empty-state"><i class="ti ti-search"></i>Aucun article</td></tr>';return;}
   let html='';
   rows.forEach(a=>{
@@ -865,7 +873,7 @@ function renderTable(){
     const other=currentTeam==='GMS'?'Prestige':'GMS';
     const moveBtn='<button onclick="window.moveToOther('+a.id+')" style="padding:2px 7px;border:1px solid var(--gray-light);border-radius:6px;background:transparent;color:var(--gray);cursor:pointer;font-size:11px">'+other+' →</button>';
     
-    const mkInput=(loc,val)=>'<input class="qty-in" type="number" min="0" value="'+val+'" onchange="window.setCount('+a.id+','+loc+',this.value)">';
+    const mkInput=(loc,val)=>'<input class="qty-in" type="number" min="0" inputmode="decimal" value="'+val+'" onchange="window.setCount('+a.id+','+loc+',this.value)">';
     const mkPlus=(loc)=>'<button class="add-loc-btn" onclick="window.addLoc('+a.id+','+loc+')">+</button>';
     
     const locs=[a.compte1,a.compte2,a.compte3,a.compte4,a.compte5,a.compte6,a.compte7,a.compte8];
@@ -879,7 +887,7 @@ function renderTable(){
     const destroy='<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="'+qd+'" onchange="window.setCount('+a.id+',9,this.value)">';
     
     html+='<tr data-id="'+a.id+'">'+
-      '<td style="font-weight:500">'+a.article+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
+      '<td style="font-weight:500">'+(q?a.article.replace(new RegExp('('+q.split(' ').filter(w=>w).join('|')+')','gi'),'<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">$1</mark>'):a.article)+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap">'+inp+'</div></td>'+
       '<td style="text-align:center">'+destroy+'</td>'+
       '<td class="tot-cell" style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
