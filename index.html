@@ -252,7 +252,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
     <div class="progress-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input class="search-input" id="srch" placeholder="🔍 Rechercher..." oninput="renderTable()" onkeyup="renderTable()" style="min-width:160px"/>
-      <button class="btn btn-sm" onclick="resetCounts()"><i class="ti ti-refresh"></i> Réinitialiser</button>
+      <button class="btn btn-sm btn-danger" onclick="resetCounts()" style="opacity:0.5;font-size:11px"><i class="ti ti-refresh"></i> Tout réinitialiser</button>
     </div>
   </div>
   <div class="card">
@@ -1023,11 +1023,6 @@ function renderEcarts(){
     }
     return '<tr><td style="font-weight:500">'+a.article+lotsHtml+'</td><td style="text-align:right">'+a.nb_colis+'</td><td style="text-align:right;font-weight:700">'+a.compte+'</td><td class="'+cls+'" style="text-align:right">'+sign+e+'</td><td>'+badge+'</td></tr>';
   }).join('');
-  // Add event listeners to toggles
-  tbody.querySelectorAll('input[type=checkbox]').forEach(inp=>{
-    const art=decodeURIComponent(inp.id.replace('tog-',''));
-    inp.addEventListener('change',function(){window.toggleArticleEquipe(encodeURIComponent(art),this.checked);});
-  });
 }
 
 // ── CSV / PDF ──
