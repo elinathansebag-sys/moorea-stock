@@ -266,9 +266,11 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
       <table>
         <thead><tr>
           <th>Article</th>
+          <th style="text-align:center">Stock</th>
           <th style="text-align:center">Comptage</th>
           <th style="text-align:center;color:#dc2626">Détruire</th>
           <th style="text-align:center">Total</th>
+          <th style="text-align:center">Écart</th>
         </tr></thead>
         <tbody id="tbl-body"></tbody>
       </table>
@@ -835,9 +837,19 @@ window.setCount=function(id,loc,val){
   const row = document.querySelector('tr[data-id="'+id+'"]');
   if(row){
     const totCell = row.querySelector('.tot-cell');
+    const ecartCell = row.querySelector('.ecart-cell');
     if(totCell){
       let t=0;for(let i=1;i<=8;i++)t+=a['compte'+i]??0;
-      totCell.textContent = (a.compte1!==null&&a.compte1!==undefined) ? t : '-';
+      const hasCnt = a.compte1!==null&&a.compte1!==undefined;
+      totCell.textContent = hasCnt ? t : '-';
+      if(ecartCell){
+        if(!hasCnt){ ecartCell.textContent='—'; ecartCell.style.color='var(--gray)'; }
+        else {
+          const e = t - a.nb_colis;
+          ecartCell.textContent = (e>0?'+':'')+e;
+          ecartCell.style.color = e<0?'#dc2626':e>0?'#b45309':'#15803d';
+        }
+      }
     }
   }
   clearTimeout(comptageTimeout);
@@ -906,11 +918,16 @@ function renderTable(){
     
     const destroy='<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="'+qd+'" onchange="window.setCount('+a.id+',9,this.value)">';
     
+    const ecartVal = showTot ? (tot - a.nb_colis) : null;
+    const ecartColor = ecartVal === null ? 'var(--gray)' : ecartVal < 0 ? '#dc2626' : ecartVal > 0 ? '#b45309' : '#15803d';
+    const ecartStr = ecartVal === null ? '—' : (ecartVal > 0 ? '+' : '') + ecartVal;
     html+='<tr data-id="'+a.id+'">'+
       '<td style="font-weight:500">'+(()=>{if(!q)return a.article;try{const esc=q.split(' ').filter(w=>w).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));return a.article.replace(new RegExp('('+esc.join('|')+')','gi'),'<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">$1</mark>');}catch(e){return a.article;}})()+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
+      '<td style="text-align:center;font-weight:600;color:var(--gray)">'+a.nb_colis+'</td>'+
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap">'+inp+'</div></td>'+
       '<td style="text-align:center">'+destroy+'</td>'+
       '<td class="tot-cell" style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
+      '<td class="ecart-cell" style="text-align:center;font-weight:700;color:'+ecartColor+'">'+ecartStr+'</td>'+
     '</tr>';
   });
   document.getElementById('tbl-body').innerHTML=html;
