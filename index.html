@@ -861,7 +861,7 @@ window.addLoc=function(id,loc){
   clearTimeout(comptageTimeout);
   comptageTimeout=setTimeout(saveComptages,1500);
   // Add input next to the + button without full re-render
-  const btn=document.querySelector('button.add-loc-btn[onclick*="addLoc('+id+','+loc+')"]');
+  const btn=document.querySelector('button.add-loc-btn[data-id="'+id+'"][data-loc="'+loc+'"]');
   if(btn){
     const inp=document.createElement('input');
     inp.className='qty-in';inp.type='number';inp.min='0';inp.value='';
@@ -905,7 +905,7 @@ function renderTable(){
     const moveBtn='<button onclick="window.moveToOther('+a.id+')" style="padding:2px 7px;border:1px solid var(--gray-light);border-radius:6px;background:transparent;color:var(--gray);cursor:pointer;font-size:11px">'+other+' →</button>';
     
     const mkInput=(loc,val)=>'<input class="qty-in" type="number" min="0" inputmode="decimal" value="'+val+'" onchange="window.setCount('+a.id+','+loc+',this.value)">';
-    const mkPlus=(loc)=>'<button class="add-loc-btn" onclick="window.addLoc('+a.id+','+loc+')">+</button>';
+    const mkPlus=(loc)=>'<button class="add-loc-btn" data-id="'+a.id+'" data-loc="'+loc+'" onclick="window.addLoc('+a.id+','+loc+')">+</button>';
     
     const locs=[a.compte1,a.compte2,a.compte3,a.compte4,a.compte5,a.compte6,a.compte7,a.compte8];
     let inp=mkInput(1,q1);
@@ -913,7 +913,7 @@ function renderTable(){
     locs.forEach((v,i)=>{
       if(i>0&&v!==null&&v!==undefined){inp+=mkInput(i+1,v);lastFilled=i+1;}
     });
-    if(q1!==''&&lastFilled<8) inp+=mkPlus(lastFilled+1);
+    if(lastFilled<8) inp+=mkPlus(q1!==''?lastFilled+1:1);
     
     const destroy='<input class="qty-in-destroy" type="number" min="0" placeholder="0" value="'+qd+'" onchange="window.setCount('+a.id+',9,this.value)">';
     
