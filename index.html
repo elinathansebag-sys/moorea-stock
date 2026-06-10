@@ -266,11 +266,10 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
       <table>
         <thead><tr>
           <th>Article</th>
-          <th style="text-align:center">Stock</th>
           <th style="text-align:center">Comptage</th>
-          <th style="text-align:center;color:#dc2626">Détruire</th>
           <th style="text-align:center">Total</th>
           <th style="text-align:center">Écart</th>
+          <th style="text-align:center;color:var(--gray)">Stock</th>
         </tr></thead>
         <tbody id="tbl-body"></tbody>
       </table>
@@ -923,11 +922,10 @@ function renderTable(){
     const ecartStr = ecartVal === null ? '—' : (ecartVal > 0 ? '+' : '') + ecartVal;
     html+='<tr data-id="'+a.id+'">'+
       '<td style="font-weight:500">'+(()=>{if(!q)return a.article;try{const esc=q.split(' ').filter(w=>w).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));return a.article.replace(new RegExp('('+esc.join('|')+')','gi'),'<mark style="background:#fef3c7;border-radius:2px;padding:0 1px">$1</mark>');}catch(e){return a.article;}})()+(a.comment?'<br><span style="font-size:11px;color:var(--gray);font-style:italic">'+a.comment+'</span>':'')+'<br>'+moveBtn+'</td>'+
-      '<td style="text-align:center;font-weight:600;color:var(--gray)">'+a.nb_colis+'</td>'+
       '<td style="text-align:center"><div style="display:flex;align-items:center;gap:5px;justify-content:center;flex-wrap:wrap">'+inp+'</div></td>'+
-      '<td style="text-align:center">'+destroy+'</td>'+
       '<td class="tot-cell" style="text-align:center;font-weight:700;color:var(--gold)">'+(showTot?tot:'-')+'</td>'+
       '<td class="ecart-cell" style="text-align:center;font-weight:700;color:'+ecartColor+'">'+ecartStr+'</td>'+
+      '<td style="text-align:center;color:var(--gray);font-size:12px">'+a.nb_colis+'</td>'+
     '</tr>';
   });
   document.getElementById('tbl-body').innerHTML=html;
