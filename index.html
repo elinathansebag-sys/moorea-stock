@@ -234,6 +234,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
     <button class="btn btn-gold" onclick="document.getElementById('file-input').click()"><i class="ti ti-upload"></i> Déposer un stock</button>
   </div>
   <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
+  <input type="file" id="file-reimport" accept=".xlsx,.xls" style="display:none"/>
   <div id="upload-status" style="font-size:13px;color:var(--gray);margin-bottom:1rem;min-height:18px"></div>
   <div class="card" id="stock-list-card">
     <div id="stock-list"><div class="empty-state"><i class="ti ti-inbox"></i>Aucun stock importé</div></div>
@@ -243,8 +244,14 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
 <!-- PAGE COMPTAGE -->
 <div id="page-comptage" style="display:none">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
-    <div class="section-title" style="margin:0" id="comptage-title">Comptage</div>
-    <button class="btn btn-gold" onclick="terminerComptage()"><i class="ti ti-check"></i> Terminer et voir les écarts</button>
+    <div>
+      <div class="section-title" style="margin:0" id="comptage-title">Comptage</div>
+      <div id="session-id-display" style="font-size:11px;color:var(--gray);margin-top:3px"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="changerFichierStock()" title="Réimporter un fichier en gardant les comptages"><i class="ti ti-file-import"></i> Changer fichier</button>
+      <button class="btn btn-gold" onclick="terminerComptage()"><i class="ti ti-check"></i> Terminer et voir les écarts</button>
+    </div>
   </div>
   <div class="stat-grid" id="metrics-c"></div>
   <div class="card" style="padding:.75rem 1.25rem;margin-bottom:1rem">
@@ -437,6 +444,7 @@ let cfFilter = 'tous';
 let comptageTimeout = null;
 let histoCache = [];
 let calcLastFocused = null;
+let currentSessionId = '';
 
 const TODAY = new Date().toISOString().slice(0,10);
 
@@ -516,7 +524,8 @@ async function saveComptages(){
       data[a.article]={c:a.compte,...locs,cd:a.detruire??null};
     }
   });
-  await setDoc(doc(db,'comptages',currentImportId+'_'+currentTeam),{data,team:currentTeam,date:TODAY,ts:Date.now()});
+  await setDoc(doc(db,'comptages',currentImportId+'_'+currentTeam),{data,team:currentTeam,date:TODAY,ts:Date.now(),sessionId:currentSessionId});
+    setSyncStatus('ok','Sauvegardé');
 }
 
 async function loadComptages(team){
@@ -612,6 +621,7 @@ function readFile(file){
 window.closeModalTeam=function(){document.getElementById('modal-team').classList.remove('open');};
 
 window.startSession=async function(team){
+  currentSessionId = '';
   document.getElementById('modal-team').classList.remove('open');
   // Save team choice to Firebase stock document
   if(currentImportId){
@@ -628,12 +638,15 @@ window.startSession=async function(team){
 
 function launchSession(team){
   currentTeam=team;
+  // Generate session ID if not already set
+  if(!currentSessionId) currentSessionId = 'CPT-'+team+'-'+new Date().toISOString().slice(0,10)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
   articles=allArticles.filter(a=>(a.equipe===team||getEquipe(a)===team)).map(a=>({...a,compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
   ecartFilter='tous';
   document.getElementById('comptage-title').textContent='Comptage '+team;
   document.getElementById('ecarts-title').textContent='Écarts '+team;
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.add('hidden');
+  document.getElementById('session-id-display').textContent = '📋 Session : ' + currentSessionId;
   loadComptages(team).then(()=>{updateMetricsC();renderTable();});
   loadHistoArticles();
   // Setup search listener fresh each time
@@ -908,6 +921,96 @@ function renderTable(){
   });
   document.getElementById('tbl-body').innerHTML=html;
 }
+
+
+window.changerFichierStock = function() {
+  if(!currentTeam) { toast('Aucun comptage en cours'); return; }
+  if(!confirm('Changer le fichier stock va garder tous vos comptages et les appliquer au nouveau fichier. Continuer ?')) return;
+  document.getElementById('file-reimport').click();
+};
+
+document.getElementById('file-reimport').addEventListener('change', async function(e) {
+  if(!e.target.files[0]) return;
+  const file = e.target.files[0];
+  // Save current comptages before switching
+  await saveComptages();
+  // Remember current counts
+  const savedCounts = {};
+  articles.forEach(a => {
+    if(a.compte !== null && a.compte !== undefined) {
+      savedCounts[a.article] = {
+        compte: a.compte,
+        compte1: a.compte1, compte2: a.compte2, compte3: a.compte3,
+        compte4: a.compte4, compte5: a.compte5, compte6: a.compte6,
+        compte7: a.compte7, compte8: a.compte8,
+        detruire: a.detruire
+      };
+    }
+  });
+  const savedTeam = currentTeam;
+  const savedSessionId = currentSessionId;
+  // Read new file
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    toast('⏳ Lecture du nouveau fichier...');
+    const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    const rows = json.slice(1);
+    const hdrs = (json[0]||[]).map(h=>String(h||'').toLowerCase().trim());
+    const findExact=(kws)=>{for(const kw of kws){const i=hdrs.findIndex(h=>h===kw);if(i>=0)return i;}return -1;};
+    const findPartial=(kws)=>{for(const kw of kws){const i=hdrs.findIndex(h=>h.includes(kw));if(i>=0)return i;}return -1;};
+    const isNum=(ci)=>{const v=rows.slice(0,15).map(r=>r[ci]).filter(v=>v!==''&&v!=null);return v.length>0&&v.filter(v=>!isNaN(parseFloat(v))).length/v.length>0.6;};
+    let colFamille=findExact(['famille']); if(colFamille<0) colFamille=findPartial(['famille']);
+    let colCode=findExact(['code article','code art']); if(colCode<0) colCode=findPartial(['code']);
+    let colArticle=findExact(['article','designation','désignation']); if(colArticle<0) colArticle=findPartial(['designation','désignation']);
+    if(colArticle===colCode) colArticle=colCode+1;
+    let colQty=findExact(['nb colis']); if(colQty<0) colQty=findPartial(['nb colis','quantit','colis']);
+    if(colQty<0){for(let i=(colArticle+1);i<(hdrs.length||10);i++){if(isNum(i)){colQty=i;break;}}}
+    const grouped={};
+    rows.forEach(r=>{
+      const art=String(r[colArticle]||'').trim();
+      if(!art||art.length<3||!isNaN(art)) return;
+      if(['total','article',''].includes(art.toLowerCase())) return;
+      if(colCode>=0&&art===String(r[colCode]||'').trim()) return;
+      const qty=parseInt(r[colQty])||0; if(qty<0) return;
+      const lotFull=r[0]?String(r[0]).trim():'';
+      const lot=lotFull?lotFull.slice(-4):'';
+      const fam=colFamille>=0?String(r[colFamille]||'').trim():'';
+      if(!grouped[art]) grouped[art]={article:art,famille:fam,nb_colis:0,lots:[],lotsQty:{}};
+      grouped[art].nb_colis+=qty;
+      if(lot){if(!grouped[art].lots.includes(lot))grouped[art].lots.push(lot);grouped[art].lotsQty[lot]=(grouped[art].lotsQty[lot]||0)+qty;}
+    });
+    allArticles = Object.values(grouped).map((a,i)=>({
+      id:i+1, equipe:'PRESTIGE', famille:a.famille, code:'',
+      article:a.article, nb_colis:a.nb_colis,
+      lots:a.lots, lot:a.lots.join(' '), lotsQty:a.lotsQty||{},
+      compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null
+    }));
+    // Save new stock
+    await saveStock(file.name, allArticles);
+    // Restore session
+    currentSessionId = savedSessionId;
+    // Relaunch with same team
+    currentTeam = savedTeam;
+    articles = allArticles.filter(a=>(a.equipe===savedTeam||getEquipe(a)===savedTeam)).map(a=>({...a,compte:null,compte1:null,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null}));
+    // Restore counts by article name
+    let restored = 0;
+    articles.forEach(a => {
+      const saved = savedCounts[a.article];
+      if(saved) {
+        Object.assign(a, saved);
+        restored++;
+      }
+    });
+    document.getElementById('session-id-display').textContent = 'Session : ' + currentSessionId;
+    updateMetricsC(); renderTable();
+    await saveComptages();
+    toast(restored + ' comptages restaurés sur le nouveau fichier');
+    e.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+});
 
 window.terminerComptage=function(){
   document.getElementById('nav-ecarts').classList.remove('hidden');
