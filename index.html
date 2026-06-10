@@ -253,7 +253,6 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
       <button class="btn btn-gold" onclick="terminerComptage()"><i class="ti ti-check"></i> Terminer et voir les écarts</button>
     </div>
   </div>
-  <div class="stat-grid" id="metrics-c"></div>
   <div class="card" style="padding:.75rem 1.25rem;margin-bottom:1rem">
     <div class="progress-label"><span>Avancement</span><span id="prog-label">0%</span></div>
     <div class="progress-bg"><div class="progress-bar" id="prog" style="width:0%"></div></div>
@@ -872,12 +871,7 @@ function updateMetricsC(){
   const tot=articles.length,done=articles.filter(counted).length;
   const pct=tot?Math.round(done/tot*100):0;
   document.getElementById('prog').style.width=pct+'%';
-  document.getElementById('prog-label').textContent=pct+'%';
-  document.getElementById('metrics-c').innerHTML=
-    '<div class="stat-card"><div class="num">'+tot+'</div><div class="lbl">Total</div></div>'+
-    '<div class="stat-card green"><div class="num">'+done+'</div><div class="lbl">Comptés</div></div>'+
-    '<div class="stat-card amber"><div class="num">'+(tot-done)+'</div><div class="lbl">Restants</div></div>'+
-    '<div class="stat-card gold"><div class="num">'+pct+'%</div><div class="lbl">Avancement</div></div>';
+  document.getElementById('prog-label').textContent=pct+'% · '+done+'/'+tot;
 }
 
 function renderTable(){
