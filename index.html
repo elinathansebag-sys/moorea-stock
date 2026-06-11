@@ -343,7 +343,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
       <button class="pill active" id="cf-tous" onclick="setCF('tous')">Tous</button>
       <button class="pill" id="cf-gms" onclick="setCF('GMS')">GMS</button>
       <button class="pill" id="cf-prestige" onclick="setCF('PRESTIGE')">Prestige</button>
-      <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" style="max-width:200px"/>
+      <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" onkeyup="renderConfig()" style="max-width:200px"/>
       <button class="btn btn-sm" id="btn-fusion-mode" onclick="toggleFusionMode()"><i class="ti ti-link"></i> Fusionner</button>
     </div>
     <div class="tbl-wrap">
@@ -1286,6 +1286,15 @@ window.checkConfigPin = function(val) {
       document.getElementById('config-pin-error').textContent = '';
       renderConfig();
       renderFusions();
+      // Setup search listener fresh
+      const cfgSrch = document.getElementById('cfg-srch');
+      if(cfgSrch){
+        const newEl = cfgSrch.cloneNode(true);
+        cfgSrch.parentNode.replaceChild(newEl, cfgSrch);
+        newEl.addEventListener('input', () => renderConfig());
+        newEl.addEventListener('keyup', () => renderConfig());
+        newEl.focus();
+      }
     } else {
       document.getElementById('config-pin-error').textContent = 'Code incorrect';
       document.getElementById('config-pin-input').value = '';
