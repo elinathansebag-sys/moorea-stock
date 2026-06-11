@@ -345,6 +345,7 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
       <button class="pill" id="cf-prestige" onclick="setCF('PRESTIGE')">Prestige</button>
       <input class="search-input" id="cfg-srch" placeholder="🔍 Rechercher..." oninput="renderConfig()" onkeyup="renderConfig()" style="max-width:200px"/>
       <button class="btn btn-sm" id="btn-fusion-mode" onclick="toggleFusionMode()"><i class="ti ti-link"></i> Fusionner</button>
+      <button class="btn btn-sm" onclick="optimiserOrdre()" title="Analyse les sessions précédentes pour optimiser l'ordre de comptage"><i class="ti ti-brain"></i> Optimiser ordre</button>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -528,15 +529,15 @@ async function saveComptages(){
   if(!currentTeam||!currentImportId) return;
   setSyncStatus('loading','Sauvegarde...');
   const data={};
-  articles.forEach(a=>{
+  articles.forEach((a,idx)=>{
     if(counted(a)){
       const locs={};
       for(let i=1;i<=8;i++) if(a['compte'+i]!==null&&a['compte'+i]!==undefined) locs['c'+i]=a['compte'+i];
-      data[a.article]={c:a.compte,...locs,cd:a.detruire??null};
+      data[a.article]={c:a.compte,...locs,cd:a.detruire??null,_pos:a._saisieTs||Date.now(),_idx:idx};
     }
   });
   await setDoc(doc(db,'comptages',currentImportId+'_'+currentTeam),{data,team:currentTeam,date:TODAY,ts:Date.now(),sessionId:currentSessionId});
-    setSyncStatus('ok','Sauvegardé');
+  setSyncStatus('ok','Sauvegardé');
 }
 
 async function loadComptages(team){
@@ -658,7 +659,7 @@ function launchSession(team){
   document.getElementById('nav-comptage').classList.remove('hidden');
   document.getElementById('nav-ecarts').classList.add('hidden');
   document.getElementById('session-id-display').textContent = '📋 Session : ' + currentSessionId;
-  loadComptages(team).then(()=>{updateMetricsC();renderTable();});
+  loadComptages(team).then(async ()=>{ await loadOrdreOptimise(team); updateMetricsC();renderTable();});
   loadHistoArticles();
   // Setup search listener fresh each time
   const srchEl = document.getElementById('srch');
@@ -840,6 +841,7 @@ window.setCount=function(id,loc,val){
   const a=articles.find(x=>x.id===id);if(!a)return;
   const v=val===''?null:Math.max(0,parseFloat(val)||0);
   if(loc<=8) a['compte'+loc]=v; else a.detruire=v;
+  if(!a._saisieTs && v!==null) a._saisieTs=Date.now(); // record first saisie time
   const hasCount=a.compte1!==null&&a.compte1!==undefined;
   if(hasCount){let t=0;for(let i=1;i<=8;i++)t+=a['compte'+i]??0;a.compte=t;}else a.compte=null;
   updateMetricsC();
@@ -1468,6 +1470,74 @@ window.supprimerFusion = async function(idx) {
     renderFusions();
   } catch(e) { toast('Erreur'); }
 };
+
+
+window.optimiserOrdre = async function() {
+  toast('⏳ Analyse des sessions...');
+  try {
+    // Load all comptages
+    const snap = await getDocs(collection(db,'comptages'));
+    const positions = {}; // article -> [positions]
+    
+    snap.forEach(d => {
+      const data = d.data().data || {};
+      const team = d.data().team;
+      // Get all articles with their saisie position
+      const entries = Object.entries(data)
+        .filter(([art,v]) => v && v._pos)
+        .sort((a,b) => a[1]._pos - b[1]._pos);
+      entries.forEach(([art,v],i) => {
+        if(!positions[art]) positions[art] = [];
+        positions[art].push(i);
+      });
+    });
+    
+    if(Object.keys(positions).length < 5) {
+      toast('Pas assez de données — comptez encore quelques sessions !');
+      return;
+    }
+    
+    // Calculate average position for each article
+    const avgPos = {};
+    Object.entries(positions).forEach(([art,poses]) => {
+      avgPos[art] = poses.reduce((a,b)=>a+b,0)/poses.length;
+    });
+    
+    // Save optimized order to Firebase
+    await setDoc(doc(db,'config','ordre'), { 
+      data: avgPos, 
+      updatedAt: new Date().toISOString(),
+      sessions: snap.size
+    });
+    
+    toast('✓ Ordre optimisé sur '+snap.size+' sessions !');
+    
+    // Show preview
+    const sorted = Object.entries(avgPos)
+      .sort((a,b)=>a[1]-b[1])
+      .slice(0,10)
+      .map(([art]) => art);
+    
+    alert('Ordre optimisé ! Les 10 premiers articles :\n' + sorted.map((a,i)=>(i+1)+'. '+a).join('\n'));
+    
+  } catch(e) { toast('Erreur analyse'); console.error(e); }
+};
+
+// Load optimized order and apply to articles array
+async function loadOrdreOptimise(team) {
+  try {
+    const snap = await getDoc(doc(db,'config','ordre'));
+    if(!snap.exists()) return;
+    const avgPos = snap.data().data || {};
+    // Sort articles by optimized order (articles not in order go to end)
+    articles.sort((a,b) => {
+      const posA = avgPos[a.article] ?? 9999;
+      const posB = avgPos[b.article] ?? 9999;
+      return posA - posB;
+    });
+    toast('📊 Ordre optimisé appliqué');
+  } catch(e) {}
+}
 
 window.setCF=function(f){
   cfFilter=f;
