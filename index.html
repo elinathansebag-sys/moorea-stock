@@ -1042,13 +1042,28 @@ window.resetCounts=function(){
   updateMetricsC();renderTable();saveComptages();
 };
 
-window.moveToOther=function(id){
+window.moveToOther=async function(id){
   const a=articles.find(x=>x.id===id);if(!a)return;
+  const newTeam=currentTeam==='GMS'?'PRESTIGE':'GMS';
+  // Remove from current list
   articles=articles.filter(x=>x.id!==id);
   updateMetricsC();renderTable();
   clearTimeout(comptageTimeout);
   comptageTimeout=setTimeout(saveComptages,500);
-  toast(a.article+' retiré de la liste');
+  // Update STOCK_DATA in memory
+  if(typeof STOCK_DATA!=='undefined'){
+    const item=STOCK_DATA.find(s=>s.article===a.article);
+    if(item) item.equipe=newTeam;
+  }
+  _byArticle=null;
+  // Save override to Firebase
+  try{
+    const snap=await getDoc(doc(db,'config','overrides'));
+    const overrides=snap.exists()?(snap.data().data||{}):{};
+    overrides[a.article]=newTeam;
+    await setDoc(doc(db,'config','overrides'),{data:overrides});
+    toast(a.article.split(' ').slice(0,3).join(' ')+' → '+newTeam);
+  }catch(e){toast('Déplacé (erreur sauvegarde)');}
 };
 
 // ── AJOUTER ARTICLE ──
