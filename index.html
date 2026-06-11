@@ -354,6 +354,15 @@ input.qty-in:focus,input.qty-in-destroy:focus{position:relative;z-index:10}
     </div>
   </div>
   </div><!-- /config-content -->
+
+  <!-- Fusions section -->
+  <div id="fusions-content" style="display:none;margin-top:1.5rem">
+    <div class="section-title"><i class="ti ti-link"></i> Articles fusionnés</div>
+    <div class="card">
+      <div id="fusions-list"><div class="empty-state"><i class="ti ti-loader"></i>Chargement...</div></div>
+    </div>
+  </div>
+
 </div>
 
 </div><!-- /app -->
@@ -488,10 +497,12 @@ window.showPage = function(p){
     if(!configUnlocked){
       document.getElementById('config-pin-screen').style.display='block';
       document.getElementById('config-content').style.display='none';
+      document.getElementById('fusions-content').style.display='none';
       document.getElementById('config-pin-input').value='';
       document.getElementById('config-pin-error').textContent='';
     }
     renderConfig();
+    if(configUnlocked) renderFusions();
   }
 };
 
@@ -1249,6 +1260,7 @@ window.confirmerFusion = async function() {
     toast(art1 + ' + ' + art2 + ' fusionnés en "' + nom + '"');
   } catch(e) { toast('Erreur'); }
   annulerFusion();
+  renderFusions();
 };
 
 window.annulerFusion = function() {
@@ -1270,8 +1282,10 @@ window.checkConfigPin = function(val) {
       configUnlocked = true;
       document.getElementById('config-pin-screen').style.display = 'none';
       document.getElementById('config-content').style.display = 'block';
+      document.getElementById('fusions-content').style.display = 'block';
       document.getElementById('config-pin-error').textContent = '';
       renderConfig();
+      renderFusions();
     } else {
       document.getElementById('config-pin-error').textContent = 'Code incorrect';
       document.getElementById('config-pin-input').value = '';
@@ -1299,6 +1313,54 @@ window.toggleArticleEquipe = async function(enc, isGMS) {
     toast(article.split(' ').slice(0,3).join(' ') + ' → ' + newEquipe);
   } catch(e) { toast('Erreur sauvegarde'); }
   renderConfig();
+};
+
+
+async function renderFusions() {
+  const container = document.getElementById('fusions-list');
+  if(!container) return;
+  try {
+    const snap = await getDoc(doc(db, 'config', 'fusions'));
+    const fusions = snap.exists() ? (snap.data().list || []) : [];
+    if(!fusions.length) {
+      container.innerHTML = '<div class="empty-state"><i class="ti ti-link-off"></i>Aucune fusion enregistrée</div>';
+      return;
+    }
+    container.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">'+
+      '<thead><tr>'+
+        '<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray);border-bottom:2px solid var(--gray-light)">Article 1</th>'+
+        '<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray);border-bottom:2px solid var(--gray-light)">Article 2</th>'+
+        '<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray);border-bottom:2px solid var(--gray-light)">Nom fusionné</th>'+
+        '<th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--gray);border-bottom:2px solid var(--gray-light)">Date</th>'+
+        '<th style="padding:8px 12px;border-bottom:2px solid var(--gray-light)"></th>'+
+      '</tr></thead>'+
+      '<tbody>'+fusions.map((f,i)=>
+        '<tr>'+
+          '<td style="padding:8px 12px;border-bottom:1px solid var(--gray-light);font-weight:500">'+f.art1+'</td>'+
+          '<td style="padding:8px 12px;border-bottom:1px solid var(--gray-light);font-weight:500">'+f.art2+'</td>'+
+          '<td style="padding:8px 12px;border-bottom:1px solid var(--gray-light)"><span class="badge badge-ok">'+f.nom+'</span></td>'+
+          '<td style="padding:8px 12px;border-bottom:1px solid var(--gray-light);font-size:11px;color:var(--gray)">'+(f.date?new Date(f.date).toLocaleDateString('fr-FR'):'')+'</td>'+
+          '<td style="padding:8px 12px;border-bottom:1px solid var(--gray-light)">'+
+            '<button class="btn btn-sm btn-danger" data-idx="'+i+'" onclick="supprimerFusion('+i+')"><i class="ti ti-trash"></i></button>'+
+          '</td>'+
+        '</tr>'
+      ).join('')+
+      '</tbody></table>';
+  } catch(e) {
+    container.innerHTML = '<div class="empty-state"><i class="ti ti-alert-triangle"></i>Erreur chargement</div>';
+  }
+}
+
+window.supprimerFusion = async function(idx) {
+  if(!confirm('Supprimer cette fusion ?')) return;
+  try {
+    const snap = await getDoc(doc(db, 'config', 'fusions'));
+    const fusions = snap.exists() ? (snap.data().list || []) : [];
+    fusions.splice(idx, 1);
+    await setDoc(doc(db, 'config', 'fusions'), { list: fusions });
+    toast('Fusion supprimée');
+    renderFusions();
+  } catch(e) { toast('Erreur'); }
 };
 
 window.setCF=function(f){
