@@ -1104,7 +1104,13 @@ window.recupererArticle = async function(enc) {
 
 window.recupererArticle=async function(enc){
   const a=JSON.parse(decodeURIComponent(enc));
+  // Find real nb_colis from allArticles (stock data)
+  const stockRef = allArticles.find(x=>x.article===a.article);
+  const realNbColis = stockRef ? stockRef.nb_colis : a.nb_colis;
+  const realLots = stockRef ? stockRef.lots : (a.lots||[]);
+  const realLotsQty = stockRef ? stockRef.lotsQty : (a.lotsQty||{});
   const newArt={...a,id:Date.now(),equipe:currentTeam,
+    nb_colis:realNbColis, lots:realLots, lotsQty:realLotsQty,
     compte:null,compte1:null,compte2:null,compte3:null,compte4:null,
     compte5:null,compte6:null,compte7:null,compte8:null,detruire:null};
   articles.push(newArt);
@@ -1207,7 +1213,15 @@ window.addArticleManuel=function(){
   const comment=document.getElementById('add-art-comment').value.trim();
   if(!val){toast('Entrez le nom de l\'article');return;}
   const sel=inp.dataset.selected?JSON.parse(inp.dataset.selected):null;
-  const newArt={id:Date.now(),equipe:currentTeam,famille:sel?sel.famille:'AUTRE',code:'',article:sel?sel.article:val,nb_colis:0,lots:[],lot:'',comment,compte:qty,compte1:qty,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null,_extra:true};
+  const artName = sel ? sel.article : val;
+  const stockRef2 = allArticles.find(x=>x.article===artName);
+  const newArt={id:Date.now(),equipe:currentTeam,famille:sel?sel.famille:'AUTRE',code:'',
+    article:artName,
+    nb_colis:stockRef2?stockRef2.nb_colis:0,
+    lots:stockRef2?stockRef2.lots:[],
+    lotsQty:stockRef2?stockRef2.lotsQty:{},
+    lot:stockRef2?stockRef2.lot:'',
+    comment,compte:qty,compte1:qty,compte2:null,compte3:null,compte4:null,compte5:null,compte6:null,compte7:null,compte8:null,detruire:null,_extra:true};
   articles.push(newArt);
   inp.value='';inp.dataset.selected='';
   document.getElementById('add-art-qty').value='';
