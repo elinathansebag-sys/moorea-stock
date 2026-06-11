@@ -1328,17 +1328,11 @@ function renderConfig(){
     const presCol=!isGMS?'#7c3aed':'#ccc';
     let toggleHtml='';
     if(!fusionMode){
-      const cb=document.createElement('input');
-      cb.type='checkbox';
-      if(isGMS)cb.checked=true;
-      // Build toggle as string using data attribute
-      toggleHtml='<div style="display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:11px;font-weight:600;color:'+gmsCol+'">GMS</span>'+
-        '<label class="toggle-switch gms" onclick="event.stopPropagation()">'+
-          '<input type="checkbox" id="tog-'+encodeURIComponent(a.article)+'" '+(isGMS?'checked':'')+'>'+
-          '<span class="toggle-slider"></span>'+
-        '</label>'+
-        '<span style="font-size:11px;font-weight:600;color:'+presCol+'">Prestige</span>'+
+      const gmsStyle='padding:5px 14px;border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:all .15s;'+(isGMS?'background:var(--gold);color:var(--dark)':'background:transparent;color:#bbb');
+      const presStyle='padding:5px 14px;border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:all .15s;'+(!isGMS?'background:#7c3aed;color:#fff':'background:transparent;color:#bbb');
+      toggleHtml='<div style="display:inline-flex;border:1.5px solid var(--gray-light);border-radius:20px;overflow:hidden" onclick="event.stopPropagation()">'+
+        '<button data-enc="'+enc+'" onclick="window.toggleArticleEquipe(this.dataset.enc,true)" style="'+gmsStyle+'">GMS</button>'+
+        '<button data-enc="'+enc+'" onclick="window.toggleArticleEquipe(this.dataset.enc,false)" style="'+presStyle+'">Prestige</button>'+
       '</div>';
     }
         return '<tr style="'+bg+';'+cursor+'" '+onclick+'><td style="font-weight:500">'+a.article+(selected?' <span style="font-size:10px;color:var(--gold);font-weight:700">✓</span>':'')+'<br><span style="font-size:11px;color:var(--gray)">'+a.famille+'</span></td><td>'+toggleHtml+'</td></tr>';
