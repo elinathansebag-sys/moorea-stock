@@ -583,7 +583,7 @@ function readFile(file){
       const qty=parseInt(r[colQty])||0;
       if(qty<0) return;
       const lotFull=r[0]?String(r[0]).trim():'';
-      const lot=lotFull?lotFull.slice(-4):'';
+      const lot=lotFull?(lotFull.length>=6?lotFull.slice(-6,-2):lotFull.slice(-4)):'';
       const fam=colFamille>=0?String(r[colFamille]||'').trim():'';
       if(!grouped[art]) grouped[art]={article:art,famille:fam,nb_colis:0,lots:[],lotsQty:{}};
       grouped[art].nb_colis+=qty;
@@ -984,7 +984,7 @@ document.getElementById('file-reimport').addEventListener('change', async functi
       if(colCode>=0&&art===String(r[colCode]||'').trim()) return;
       const qty=parseInt(r[colQty])||0; if(qty<0) return;
       const lotFull=r[0]?String(r[0]).trim():'';
-      const lot=lotFull?lotFull.slice(-4):'';
+      const lot=lotFull?(lotFull.length>=6?lotFull.slice(-6,-2):lotFull.slice(-4)):'';
       const fam=colFamille>=0?String(r[colFamille]||'').trim():'';
       if(!grouped[art]) grouped[art]={article:art,famille:fam,nb_colis:0,lots:[],lotsQty:{}};
       grouped[art].nb_colis+=qty;
