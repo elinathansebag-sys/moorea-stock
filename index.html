@@ -950,6 +950,38 @@ function renderTable(){
     '</tr>';
   });
   document.getElementById('tbl-body').innerHTML=html;
+
+  // Show matching articles from OTHER team
+  if(q){
+    const otherTeam=currentTeam==='GMS'?'PRESTIGE':'GMS';
+    const otherMatches=allArticles.filter(a=>{
+      if(!a||!a.article) return false;
+      if(a.equipe===currentTeam||getEquipe(a)===currentTeam) return false;
+      if(articles.find(x=>x.article===a.article)) return false;
+      const hay=(a.article+' '+(a.famille||'')).toLowerCase();
+      return q.split(' ').filter(Boolean).every(w=>hay.includes(w));
+    });
+    if(otherMatches.length){
+      let otherHtml='<tr><td colspan="5" style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--gold);background:#fffbf0;letter-spacing:.5px">— ARTICLES EN '+otherTeam+' —</td></tr>';
+      otherMatches.forEach(a=>{
+        const lotsStr=(a.lotsQty&&Object.keys(a.lotsQty||{}).length>0)?Object.entries(a.lotsQty).map(([l,q])=>'lot '+l+' · '+q+' col.').join(' | '):((a.lots&&a.lots.length)?a.lots.join(' '):'');
+        const enc=encodeURIComponent(JSON.stringify({id:a.id,article:a.article,famille:a.famille,nb_colis:a.nb_colis,lots:a.lots||[],lotsQty:a.lotsQty||{},lot:a.lot||'',equipe:a.equipe}));
+        otherHtml+='<tr style="background:#fffbf0;border-left:3px solid var(--gold)">'+
+          '<td style="font-weight:500">'+a.article+
+            '<br><span style="font-size:10px;color:var(--gold);font-weight:600">📦 '+otherTeam+' · '+a.nb_colis+' colis</span>'+
+            (lotsStr?'<br><span style="font-size:10px;color:var(--gray)">'+lotsStr+'</span>':'')+
+          '</td>'+
+          '<td colspan="3" style="text-align:center;color:var(--gray);font-size:12px;font-style:italic">—</td>'+
+          '<td style="text-align:right">'+
+            '<button class="btn btn-sm btn-gold" data-enc="'+enc+'" onclick="window.recupererArticle(this.dataset.enc)">'+
+              '<i class="ti ti-arrow-left"></i> Récupérer'+
+            '</button>'+
+          '</td>'+
+        '</tr>';
+      });
+      document.getElementById('tbl-body').innerHTML+=otherHtml;
+    }
+  }
 }
 
 
@@ -1041,6 +1073,57 @@ document.getElementById('file-reimport').addEventListener('change', async functi
   };
   reader.readAsArrayBuffer(file);
 });
+
+
+window.recupererArticle = async function(enc) {
+  const a = JSON.parse(decodeURIComponent(enc));
+  // Add to current team articles
+  const newArt = {...a, id: Date.now(), equipe: currentTeam,
+    compte:null,compte1:null,compte2:null,compte3:null,compte4:null,
+    compte5:null,compte6:null,compte7:null,compte8:null,detruire:null};
+  articles.push(newArt);
+  // Save override
+  if(typeof STOCK_DATA !== 'undefined'){
+    const item = STOCK_DATA.find(s=>s.article===a.article);
+    if(item) item.equipe = currentTeam;
+  }
+  _byArticle = null;
+  try {
+    const snap = await getDoc(doc(db,'config','overrides'));
+    const overrides = snap.exists() ? (snap.data().data||{}) : {};
+    overrides[a.article] = currentTeam;
+    await setDoc(doc(db,'config','overrides'), {data:overrides});
+  } catch(e) {}
+  updateMetricsC();
+  renderTable();
+  clearTimeout(comptageTimeout);
+  comptageTimeout = setTimeout(saveComptages, 500);
+  toast(a.article.split(' ').slice(0,3).join(' ') + ' ajouté en ' + currentTeam);
+};
+
+
+window.recupererArticle=async function(enc){
+  const a=JSON.parse(decodeURIComponent(enc));
+  const newArt={...a,id:Date.now(),equipe:currentTeam,
+    compte:null,compte1:null,compte2:null,compte3:null,compte4:null,
+    compte5:null,compte6:null,compte7:null,compte8:null,detruire:null};
+  articles.push(newArt);
+  if(typeof STOCK_DATA!=='undefined'){
+    const item=STOCK_DATA.find(s=>s.article===a.article);
+    if(item) item.equipe=currentTeam;
+  }
+  _byArticle=null;
+  try{
+    const snap=await getDoc(doc(db,'config','overrides'));
+    const overrides=snap.exists()?(snap.data().data||{}):{};
+    overrides[a.article]=currentTeam;
+    await setDoc(doc(db,'config','overrides'),{data:overrides});
+  }catch(e){}
+  updateMetricsC();renderTable();
+  clearTimeout(comptageTimeout);
+  comptageTimeout=setTimeout(saveComptages,500);
+  toast(a.article.split(' ').slice(0,3).join(' ')+' → '+currentTeam);
+};
 
 window.terminerComptage=function(){
   document.getElementById('nav-ecarts').classList.remove('hidden');
