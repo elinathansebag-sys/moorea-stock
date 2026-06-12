@@ -705,6 +705,7 @@ async function renderStockList(){
         '<div class="stock-actions">'+
           (s.cloture ? '' : '<button class="btn btn-sm btn-gold" onclick="window.recompterDepuis(this.dataset.sid,this.dataset.team)" data-sid="'+sid+'" data-team="'+team+'"><i class="ti ti-clipboard-list"></i> Compter</button>')+
           (s.cloture ? '<span style="font-size:11px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:4px 10px;border-radius:8px;font-weight:600">✓ Clôturé</span> <button class="btn btn-sm" onclick="window.printStockPDF(this.dataset.sid,this.dataset.team)" data-sid="'+sid+'" data-team="'+team+'"><i class="ti ti-file-type-pdf"></i> PDF</button>' : '<button class="btn btn-sm" style="border-color:#bbf7d0;color:#15803d" onclick="window.cloturerStock(this.dataset.sid,event)" data-sid="'+sid+'"><i class="ti ti-lock"></i> Clôturer</button>')+
+          '<button class="btn btn-sm" onclick="window.dupliquerStock(this.dataset.sid,event)" data-sid="'+sid+'" title="Dupliquer ce stock"><i class="ti ti-copy"></i></button>'+
           '<button class="btn btn-sm btn-danger" onclick="window.deleteStock(this.dataset.sid,event)" data-sid="'+sid+'"><i class="ti ti-trash"></i></button>'+
         '</div>'+
       '</div>';
@@ -824,6 +825,33 @@ window.cloturerStock=async function(sid,e){
     toast('Stock clôturé');
     renderStockList();
   }catch(e){toast('Erreur');}
+};
+
+
+window.dupliquerStock = async function(sid, e) {
+  e.stopPropagation();
+  if(!confirm('Dupliquer ce stock ? Un nouveau stock identique sera créé.')) return;
+  try {
+    setSyncStatus('loading','Duplication...');
+    const snap = await getDoc(doc(db,'stocks',sid));
+    if(!snap.exists()) { toast('Stock introuvable'); return; }
+    const data = snap.data();
+    // Create new ID
+    const newId = new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-');
+    const newData = {
+      ...data,
+      importId: newId,
+      date: new Date().toISOString(),
+      dateLabel: new Date().toLocaleString('fr-FR'),
+      cloture: false,
+      clotureDate: null,
+      filename: '📋 ' + (data.filename||'stock'),
+    };
+    await setDoc(doc(db,'stocks',newId), newData);
+    setSyncStatus('ok','Synchronisé');
+    toast('Stock dupliqué !');
+    renderStockList();
+  } catch(e) { setSyncStatus('error','Erreur'); toast('Erreur duplication'); }
 };
 
 window.deleteStock=async function(id,e){
